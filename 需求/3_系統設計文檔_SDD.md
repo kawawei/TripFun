@@ -9,19 +9,12 @@ TripFun/
 ├── .agent/                  # AI 代理工作流與規則配置 (Workflows)
 ├── .cursor/                 # Cursor 編輯器規則 (.mdc)
 ├── backend/                 # 後端 NestJS 專案根目錄 (API)
-│   ├── docker/              # 後端專屬 Dockerfile (分 local/prod)
-│   ├── src/                 # 程式原始碼
-│   │   ├── common/          # 全域攔截器、過濾器、裝飾器
-│   │   ├── config/          # 環境變數與配置加載
-│   │   ├── database/        # 遷移文件 (Migrations) 與 Seeders
-│   │   └── modules/         # 功能模組 (組件化核心)
-│   │       ├── auth/        # 認證模組
-│   │       ├── trips/       # 行程模組
-│   │       ├── members/     # 成員協作模組
-│   │       └── ...
-│   ├── test/                # 單元測試與 E2E 測試
-│   ├── .env.example         # 後端環境變數範本
-│   └── package.json
+│   └── ... (詳見模組化規範)
+├── chat/                    # 行動端即時通訊服務 (Go / High Concurrency)
+│   ├── main.go              # 服務入口
+│   ├── internal/            # 核心業務邏輯
+│   ├── pkg/                 # 可複用工具包 (WebSocket, Redis Client)
+│   └── docker/              # Go 專屬 Dockerfile (分 local/prod)
 ├── mobile/                  # 行動端 Flutter 專案根目錄 (Mobile App)
 │   ├── lib/                 # 核心原始碼 (遵循 Clean Architecture)
 │   │   ├── components/      # 原子級 UI 組件 (Shared Widgets)
@@ -264,3 +257,33 @@ async checkPermission(userId: string, tripId: string) { ... }
 1. **Redis 緩存**: 針對讀取頻率極高的「今日行程」與「地圖座標」進行 Redis 緩存。
 2. **多階段構建**: 最小化 Production Image 體積。
 3. **資料庫索引**: 針對 `share_token` 與 `trip_id` 建立複合索引。
+
+---
+
+## 12. 端口分配規範 (Port Allocation)
+
+為了避免與本地現有容器 (如 5006, 8082 等) 衝突，TripFun 專案統一使用 **9000-9999** 區間：
+
+| 服務名稱 | 容器內端口 | 本地映射端口 (Host) | 備註 |
+| :--- | :--- | :--- | :--- |
+| **Backend (NestJS)** | 3000 | **9001** | 核心業務 API |
+| **Chat Service (Go)** | 8080 | **9002** | 高併發即時通訊 |
+| **PostgreSQL** | 5432 | **9432** | 資料庫 |
+| **Redis** | 6379 | **9379** | 緩存與 Socket 共享 |
+
+---
+
+## 13. 高併發即時通訊設計 (Go Chat Service)
+
+### 13.1 職責定義
+*   **NestJS**: 負責獲取完整對話紀錄 (History) 與用戶權限驗證。
+*   **Chat Service (Go)**: 專注於 **WebSocket 長連接維護**、**即時消息推送** 與 **圖片二進制流分發**。
+
+### 13.2 技術選型
+*   **Framework**: Gin 或 Fiber (輕量級高效能)。
+*   **WebSocket**: `gorilla/websocket`。
+*   **Pub/Sub**: 使用 **Redis Pub/Sub** 實現跨多個 Go 實例的消息廣播。
+
+### 13.3 圖片處理邏輯
+*   App 透過 NestJS API 上傳圖片獲取 URL。
+*   Go Service 透過 WebSocket 推送圖片消息（含縮略圖數據與完整 URL）。
