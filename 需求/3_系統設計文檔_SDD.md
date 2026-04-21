@@ -1,45 +1,93 @@
 ---
 
-## 11. 規劃完整目錄結構 (Planned Directory Structure)
-
-為了確保組件化與高內聚低耦合，全專案預期目錄結構如下：
+## 11. 規劃完整詳細目錄結構 (Detailed Planned Directory Structure)
 
 ```text
 TripFun/
-├── .agent/                  # AI 代理工作流與規則配置 (Workflows)
-├── .cursor/                 # Cursor 編輯器規則 (.mdc)
-├── backend/                 # 後端 NestJS 專案根目錄 (API)
-│   └── ... (詳見模組化規範)
-├── chat/                    # 行動端即時通訊服務 (Go / High Concurrency)
-│   ├── main.go              # 服務入口
-│   ├── internal/            # 核心業務邏輯
-│   ├── pkg/                 # 可複用工具包 (WebSocket, Redis Client)
-│   └── docker/              # Go 專屬 Dockerfile (分 local/prod)
-├── mobile/                  # 行動端 Flutter 專案根目錄 (Mobile App)
-│   ├── lib/                 # 核心原始碼 (遵循 Clean Architecture)
-│   │   ├── components/      # 原子級 UI 組件 (Shared Widgets)
-│   │   ├── data/            # 數據層 (DTOs, Repository Impls, Data Sources)
-│   │   ├── domain/          # 領域層 (Entities, Usecases, Repo Interfaces)
-│   │   ├── presentation/    # UI 層 (Pages, Providers/Viewmodels)
-│   │   ├── l10n/            # 多國語言 (i18n) .arb 文件
-│   │   └── main.dart        # App 入口
-│   ├── test/                # Flutter 測試目錄
+├── .agent/                      # AI 代理指令、工作流範本
+├── .cursor/                     # Cursor 專案規則 (.mdc)
+├── backend/                     # 後端 NestJS 核心 (API)
+│   ├── docker/                  # Backend Dockerfiles
+│   │   ├── local/Dockerfile     # 本地開發 (含 pnpm, Hot Reload)
+│   │   └── prod/Dockerfile      # 生產構建 (Multi-stage)
+│   ├── src/
+│   │   ├── main.ts              # 入口文件
+│   │   ├── app.module.ts        # 根模組
+│   │   ├── common/              # 全域通用組件
+│   │   │   ├── decorators/      # 自定義裝飾器 (如 @CurrentUser)
+│   │   │   ├── filters/         # 異常過濾器 (HttpExceptionFilter)
+│   │   │   ├── guards/          # 權限守衛 (AuthGuard, RolesGuard)
+│   │   │   ├── interceptors/    # 攔截器 (TransformInterceptor)
+│   │   │   └── pipes/           # 校驗管道 (ValidationPipe)
+│   │   ├── config/              # 配置模組 (env, redis, postgres)
+│   │   ├── database/            # 資料庫相關
+│   │   │   ├── migrations/      # 遷移文件 (YYYYMMDDHHmmss-Name.ts)
+│   │   │   ├── seeders/         # 初始數據填充
+│   │   │   └── base.entity.ts   # 通用基礎 Entity (id, created_at...)
+│   │   └── modules/             # 業務功能模組 (組件化)
+│   │       ├── auth/            # 認證授權模組
+│   │       │   ├── controllers/
+│   │       │   ├── services/
+│   │       │   ├── dto/         # Request 驗證模型
+│   │       │   ├── entities/    # 資料表模型
+│   │       │   ├── strategies/  # Passport 策略 (JWT)
+│   │       │   └── auth.module.ts
+│   │       ├── trips/           # 行程管理模組
+│   │       ├── chat-sync/       # 與 Go 服務同步的對接模組
+│   │       └── ...
+│   ├── test/                    # 測試目錄 (unit, e2e)
+│   ├── package.json             # 強制使用 pnpm
+│   └── tsconfig.json
+├── chat/                        # 高併發即時通訊 (Go)
+│   ├── api/                     # API 定義 (Proto/Swagger)
+│   ├── cmd/
+│   │   └── server/              # 服務啟動入口 (main.go)
+│   ├── configs/                 # YAML 配置文件
+│   ├── docker/                  # Go Dockerfiles (local/prod)
+│   ├── internal/                # 內部業務邏輯 (不可被外部引用)
+│   │   ├── delivery/            # 傳輸層 (WebSocket Handlers, HTTP)
+│   │   ├── service/             # 業務邏輯 (IM Logic, Pub/Sub)
+│   │   ├── repository/          # 數據存取 (Redis/Postgres)
+│   │   └── model/               # 數據結構定義
+│   ├── pkg/                     # 通用工具庫 (Logger, RedisPool)
+│   └── go.mod
+├── mobile/                      # 行動端 (Flutter Mobile App)
+│   ├── lib/
+│   │   ├── main.dart            # 入口
+│   │   ├── core/                # 全域核心層
+│   │   │   ├── constants/       # 顏色、字體、API Endpoints
+│   │   │   ├── error/           # 異常處理機制
+│   │   │   ├── theme/           # 主題規範 (Material 3)
+│   │   │   └── utils/           # 工具類 (Date, Timezone)
+│   │   ├── data/                # 數據層 (Data Layer)
+│   │   │   ├── data_sources/    # 遠端 (Dio) / 本地 (SQLite) 來源
+│   │   │   ├── dtos/            # 從 API 拿到的原始 JSON 模型
+│   │   │   └── repositories/    # Repository 實作
+│   │   ├── domain/              # 領域層 (Domain Layer)
+│   │   │   ├── entities/        # 核心業務模型
+│   │   │   ├── repositories/    # Repository 介面定義
+│   │   │   └── usecases/        # 業務場景邏輯
+│   │   └── presentation/        # UI 層 (Presentation Layer)
+│   │       ├── global_widgets/  # 全域通用組件 (Button, Card)
+│   │       ├── providers/       # 全域狀態管理 (Riverpod/Provider)
+│   │       └── pages/           # 頁面視圖
+│   │           ├── home/
+│   │           │   ├── pages/
+│   │           │   ├── widgets/
+│   │           │   └── provider/
+│   │           └── ...
+│   ├── assets/                  # 靜態資源 (Images, Fonts, I18n)
+│   ├── test/                    # 容器內運行的測試
 │   └── pubspec.yaml
-├── docker/                  # 全局基礎設施配置 (Infrastructure)
-│   ├── local/               # 本地開發環境 Compose
-│   │   └── compose.yaml
-│   └── prod/                # 生產環境部署 Compose
-│       └── compose.yaml
-├── env/                     # 全局環境變數管理
-│   ├── local/               # 本地變數 (.env 不進版控)
-│   └── prod/                # 生產變數
-├── devlog/                  # 開發日誌與問題追蹤 (SOP)
-├── 需求/                    # 專案需求與設計文檔
-│   ├── 流程圖/              # 業務邏輯圖 (Mermaid)
-│   └── 頁面結構/            # UI 層級圖 (Mermaid)
-├── .gitignore               # 全局 Git 忽略規範
-├── README.md                # 專案概覽說明
-└── docker-compose.yaml      # (可選) 根目錄入口
+├── docker/                      # 全域容器編排
+│   ├── local/
+│   │   ├── compose.yaml         # 本地開發 (含 Hot Reload 映射)
+│   │   └── nginx.conf           # 轉發 9001, 9002 端口
+│   └── prod/
+│       └── compose.yaml         # 生產環境配置
+├── env/                         # 環境變數管理 (Git 忽略敏感內容)
+├── devlog/                      # 開發日誌與 SOP
+└── 需求/                        # 設計與規劃文檔
 ```
 
 ---
