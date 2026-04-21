@@ -190,6 +190,10 @@ CMD ["node", "dist/main"]
 *   **原子組件**: 按鈕、輸入框、卡片等抽離至 `lib/components`。
 *   **狀態管理**: 採用 Provider 或 Riverpod 進行狀態與 UI 分離。
 *   **邏輯解耦**: 所有的 API 調用封裝在 `repositories` 層，禁止在 UI 目錄直接寫邏輯。
+*   **圖示規範 (Icon Strategy)**: 
+    - **禁止使用 Emoji**: 任何 UI 元素、列表圖示或按鈕文字旁嚴禁使用系統 Emoji。
+    - **統一 Icon 庫**: 優先選用 `Remix Icon` 或 `Lucide Icons` (Flutter package) 以獲得更現代且精簡的視覺感。
+    - **自定義圖示**: 特殊圖示（如飛機特定標誌）應導入 SVG 資源。
 
 ---
 
