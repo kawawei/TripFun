@@ -166,11 +166,19 @@ CMD ["node", "dist/main"]
 async checkPermission(userId: string, tripId: string) { ... }
 ```
 
-### 5.3 命名格式 (File Naming)
-*   **目錄/文件**: 一律採用小寫 `kebab-case` (例: `user-profile/`, `trip-detail.service.ts`)。
-*   **類別/介面**: 採用 `PascalCase` (例: `TripController`)。
+### 5.4 套件管理規範 (Package Management)
+*   **後端**: 一律強制使用 **pnpm**，嚴禁使用 npm 或 yarn。這有助於節省磁碟空間並提高依賴安裝速度。
+*   **前端 (Mobile)**: 使用 Flutter 標準的 `pub` 管理。
 
 ---
+
+## 6. API 與實時通信規範 (API & Real-time)
+
+### 6.1 測試執行規範 (Testing Policy)
+為了確保測試結果在不同環境下的一致性：
+*   **環境強制**: 所有單元測試 (Unit Test) 與集成測試 (E2E) **必須在 Docker 容器內部執行**。
+*   **執行範例**: `docker exec -it tripfun-backend pnpm test`。
+*   **本地依賴**: 開發者不應依賴本地安裝的 Node.js 運行測試，一切以容器環境為準。
 
 ### 6.2 實時同步架構 (Real-time Sync)
 為了實現多人協作不刷新更新，採用 **Socket.io**：
