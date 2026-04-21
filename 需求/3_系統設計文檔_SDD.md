@@ -8,7 +8,7 @@
 TripFun/
 ├── .agent/                  # AI 代理工作流與規則配置 (Workflows)
 ├── .cursor/                 # Cursor 編輯器規則 (.mdc)
-├── backend/                 # 後端 NestJS 專案根目錄
+├── backend/                 # 後端 NestJS 專案根目錄 (API)
 │   ├── docker/              # 後端專屬 Dockerfile (分 local/prod)
 │   ├── src/                 # 程式原始碼
 │   │   ├── common/          # 全域攔截器、過濾器、裝飾器
@@ -22,7 +22,7 @@ TripFun/
 │   ├── test/                # 單元測試與 E2E 測試
 │   ├── .env.example         # 後端環境變數範本
 │   └── package.json
-├── frontend/                # 前端 Flutter 專案根目錄
+├── mobile/                  # 行動端 Flutter 專案根目錄 (Mobile App)
 │   ├── lib/                 # 核心原始碼 (遵循 Clean Architecture)
 │   │   ├── components/      # 原子級 UI 組件 (Shared Widgets)
 │   │   ├── data/            # 數據層 (DTOs, Repository Impls, Data Sources)
@@ -65,7 +65,7 @@ TripFun/
 *   **Repository/DAO 層**: 負責資料庫交互，保持原子性。
 *   **Entities/DTOs**: 強類型定義，禁止使用 `any`。
 
-### 1.3 前端代碼分層 (Frontend Layering - Flutter)
+### 1.3 行動端代碼分層 (Mobile Layering - Mobile App)
 採用 **Clean Architecture** 概念之組件化分層：
 *   **Presentation Layer (UI 層)**:
     - `widgets/`: 最小單位原子組件 (Atomic Components)。
