@@ -94,9 +94,9 @@ TripFun/
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+RUN pnpm install
 COPY . .
-RUN npm run build
+RUN pnpm run build
 
 FROM node:20-alpine AS runner
 WORKDIR /app
@@ -104,6 +104,13 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 CMD ["node", "dist/main"]
 ```
+
+### 2.4 健康檢查規範 (Health Check)
+所有容器必須配置 `healthcheck`，確保服務不穩定時能被系統偵測：
+*   **Backend (NestJS)**: 需實作並檢查 `GET /api/v1/health`。
+*   **Chat Service (Go)**: 需實作並檢查 `GET /health`。
+*   **PostgreSQL**: 使用官方指令 `pg_isready -U ${DB_USER} -d ${DB_NAME}`。
+*   **Redis**: 使用官方指令 `redis-cli ping`。
 
 ---
 
