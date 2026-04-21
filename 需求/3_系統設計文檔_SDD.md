@@ -1,6 +1,53 @@
-# 系統設計文檔 (SDD) - TripFun
+---
 
-> **文件說明**: 本文件定義了 TripFun 專案的技術架構、開發規範與部署流程。所有代碼應遵循組件化與邏輯分離原則，確保架構最優化。
+## 11. 規劃完整目錄結構 (Planned Directory Structure)
+
+為了確保組件化與高內聚低耦合，全專案預期目錄結構如下：
+
+```text
+TripFun/
+├── .agent/                  # AI 代理工作流與規則配置 (Workflows)
+├── .cursor/                 # Cursor 編輯器規則 (.mdc)
+├── backend/                 # 後端 NestJS 專案根目錄
+│   ├── docker/              # 後端專屬 Dockerfile (分 local/prod)
+│   ├── src/                 # 程式原始碼
+│   │   ├── common/          # 全域攔截器、過濾器、裝飾器
+│   │   ├── config/          # 環境變數與配置加載
+│   │   ├── database/        # 遷移文件 (Migrations) 與 Seeders
+│   │   └── modules/         # 功能模組 (組件化核心)
+│   │       ├── auth/        # 認證模組
+│   │       ├── trips/       # 行程模組
+│   │       ├── members/     # 成員協作模組
+│   │       └── ...
+│   ├── test/                # 單元測試與 E2E 測試
+│   ├── .env.example         # 後端環境變數範本
+│   └── package.json
+├── frontend/                # 前端 Flutter 專案根目錄
+│   ├── lib/                 # 核心原始碼 (遵循 Clean Architecture)
+│   │   ├── components/      # 原子級 UI 組件 (Shared Widgets)
+│   │   ├── data/            # 數據層 (DTOs, Repository Impls, Data Sources)
+│   │   ├── domain/          # 領域層 (Entities, Usecases, Repo Interfaces)
+│   │   ├── presentation/    # UI 層 (Pages, Providers/Viewmodels)
+│   │   ├── l10n/            # 多國語言 (i18n) .arb 文件
+│   │   └── main.dart        # App 入口
+│   ├── test/                # Flutter 測試目錄
+│   └── pubspec.yaml
+├── docker/                  # 全局基礎設施配置 (Infrastructure)
+│   ├── local/               # 本地開發環境 Compose
+│   │   └── compose.yaml
+│   └── prod/                # 生產環境部署 Compose
+│       └── compose.yaml
+├── env/                     # 全局環境變數管理
+│   ├── local/               # 本地變數 (.env 不進版控)
+│   └── prod/                # 生產變數
+├── devlog/                  # 開發日誌與問題追蹤 (SOP)
+├── 需求/                    # 專案需求與設計文檔
+│   ├── 流程圖/              # 業務邏輯圖 (Mermaid)
+│   └── 頁面結構/            # UI 層級圖 (Mermaid)
+├── .gitignore               # 全局 Git 忽略規範
+├── README.md                # 專案概覽說明
+└── docker-compose.yaml      # (可選) 根目錄入口
+```
 
 ---
 
