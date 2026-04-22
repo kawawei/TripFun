@@ -1,5 +1,22 @@
 # 問題追蹤 (Issue Tracking)
 
+## 2026-04-22
+
+### Flutter 編譯錯誤：CardTheme 類型不匹配 (Compilation Error)
+- **問題描述 (Issue)**: 
+  - 在 `lib/core/theme/app_theme.dart` 中，發生 `The argument type 'CardTheme' can't be assigned to the parameter type 'CardThemeData?'` 錯誤。
+  - 原因分析：在較新版本的 Flutter (Material 3) 中，`ThemeData` 的 `cardTheme` 屬性已更改為期待 `CardThemeData` 類型，而不再是 `CardTheme`。
+- **解決方案 (Solution)**:
+  - 將 `app_theme.dart` 中的 `CardTheme(...)` 改為 `CardThemeData(...)`。
+
+### 依賴項衝突：lucide_icons 與 intl (Dependency Conflict)
+- **問題描述 (Issue)**: 
+  - `lucide_icons ^0.320.0` 版本找不到，且 `intl` 與 `flutter_localizations` 發生版本衝突。
+- **解決方案 (Solution)**:
+  - 將 `lucide_icons` 降級至 `^0.257.0`。
+  - 將 `intl` 設置為 `any` 或指定的相容版本（如 `0.20.2`）以解決 `flutter_localizations` 的約束。
+  - 運行 `flutter pub get` 重新解析依賴。
+
 ## 2026-04-21
 
 ### Mermaid 語法錯誤 (Section 1) - 第二次修復
