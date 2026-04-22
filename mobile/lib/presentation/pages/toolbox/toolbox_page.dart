@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'currency_converter_page.dart';
 import 'accounting/accounting_page.dart';
+import 'world_clock_page.dart';
 
 class ToolboxPage extends StatelessWidget {
   const ToolboxPage({super.key});
@@ -107,7 +108,12 @@ class ToolboxPage extends StatelessWidget {
                   subtitle: '兩地時差切換',
                   icon: LucideIcons.clock,
                   color: Colors.purple,
-                  onTap: () {},
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const WorldClockPage(),
+                    ),
+                  ),
                 ),
                 _buildToolCard(
                   context,
