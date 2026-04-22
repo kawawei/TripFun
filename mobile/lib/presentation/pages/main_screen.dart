@@ -24,7 +24,7 @@ class MainScreen extends ConsumerWidget {
     // 定義頁面清單 / Define page list
     final List<Widget> pages = [
       const HomePage(),
-      const ExplorePage(),
+      // const ExplorePage(),
       const ToolboxPage(),
       const ProfilePage(),
     ];
@@ -55,11 +55,11 @@ class MainScreen extends ConsumerWidget {
               selectedIcon: Icon(LucideIcons.briefcase, color: Colors.white),
               label: '行程',
             ),
-            NavigationDestination(
-              icon: Icon(LucideIcons.compass),
-              selectedIcon: Icon(LucideIcons.compass, color: Colors.white),
-              label: '探索',
-            ),
+            // NavigationDestination(
+            //   icon: Icon(LucideIcons.compass),
+            //   selectedIcon: Icon(LucideIcons.compass, color: Colors.white),
+            //   label: '探索',
+            // ),
             NavigationDestination(
               icon: Icon(LucideIcons.layoutGrid),
               selectedIcon: Icon(LucideIcons.layoutGrid, color: Colors.white),

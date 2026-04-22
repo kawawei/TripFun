@@ -1,5 +1,29 @@
 # 問題追蹤 (Issue Tracking)
 
+## 2026-04-23
+
+### 匯率換算：JS Runtime 與編譯錯誤 (Runtime & Compilation Errors)
+- **問題描述 (Issue)**: 
+  - **JS Error**: 在 Web 環境下出現 `TypeError: Cannot read properties of undefined (reading 'Symbol(dartx._get)')`。
+  - **Const Error**: `showModalBottomSheet` 中的 `RoundedRectangleBorder` 使用 `const` 時，內部的 `BorderRadius.circular` 在部分 SDK 環境下報錯。
+- **原因分析**:
+  - Web 編譯器在存取類別內的 `final` Map 時，若該變數非 `static`，在某些生命週期階段存取會導致未定義錯誤。
+  - `BorderRadius.circular` 是否能作為 `const` 內容取決於使用的 Flutter SDK 版本，為確保最大相容性，不應在建構子中使用 `const` 若其包含此動態屬性。
+- **解決方案 (Solution)**:
+  - 將 `_currencyNames` 對照表改為 `static const` 類型，確保其在類別載入時即可被安全存取。
+  - 移除 `RoundedRectangleBorder` 前的 `const` 關鍵字。
+
+### 介面佈局：首頁行程卡片垂直溢出 (RenderFlex Overflow)
+- **問題描述 (Issue)**: 
+  - 在小螢幕或內容文字較多時，行程卡片出現 `A RenderFlex overflowed by 2.0 pixels on the bottom` 警告。
+- **原因分析**:
+  - 使用了 `IntrinsicHeight` 與 `Spacer()`，導致內容高度被強行約束。當文字標題過長換行時，總高度超過了卡片上限。
+- **解決方案 (Solution)**:
+  - 移除 `IntrinsicHeight`，改為使用 `minHeight` 約束。
+  - 為標題和地點文字加上 `maxLines: 1` 與 `TextOverflow.ellipsis`，防止無限向下延伸。
+  - 移除 `Spacer()` 取代為固定高度的 `SizedBox`，讓卡片高度隨內容自動撐開。
+
+
 ## 2026-04-22
 
 ### UI 視覺偏差：導航欄與按鈕主要顏色偏紫 (Visual Hue Mismatch)
