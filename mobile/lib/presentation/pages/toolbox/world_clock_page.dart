@@ -126,20 +126,26 @@ class _WorldClockPageState extends State<WorldClockPage> {
                   children: [
                     const Icon(LucideIcons.mapPin, color: Colors.white70, size: 16),
                     const SizedBox(width: 8),
-                    Text(
-                      '目前所在地 (${_localTimeZone.split('/').last.replaceAll('_', ' ')})', 
-                      style: const TextStyle(color: Colors.white70, fontSize: 14),
+                    Flexible(
+                      child: Text(
+                        '目前所在地 (${_localTimeZone.contains('/') ? _localTimeZone.split('/').last.replaceAll('_', ' ') : _localTimeZone})', 
+                        style: const TextStyle(color: Colors.white70, fontSize: 14),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                Text(
-                  DateFormat('HH:mm:ss').format(_now),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 64,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'monospace',
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    DateFormat('HH:mm:ss').format(_now),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 64,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'monospace',
+                    ),
                   ),
                 ),
                 Text(

@@ -31,6 +31,29 @@
   - 手動限制 `cursorHeight: 24` 以縮短游標長度。
   - 設定 `contentPadding: EdgeInsets.symmetric(vertical: 8)` 增加呼吸空間。
 
+### 世界時區：在地定位失效與數據未加載 (Location & Data Missing)
+- **問題描述 (Issue)**: 
+  - 進入頁面後，全球所有城市顯示的時間均與本地一致（Offset 為 0），且標註「時區數據更新中」。
+- **原因分析**:
+  - `timezone` 套件在 `WorldClockPage` 中未使用準確的在地時區標識符 (`Asia/Taipei` 等)，僅依賴 `DateTime.now()` 會導致與目標時區比對邏輯失效。
+  - `tz.local` 預設為 UTC，若未手動配置設備所在時區，對比結果永遠為 0。
+- **解決方案 (Solution)**:
+  - 引入 `flutter_native_timezone` 2.0.0。
+  - 在 `WorldClockPage` 初始化時非同步獲取 `getLocalTimezone()` 並設定為基準時區。
+  - 優化 `_getTimeDiff` 邏輯，明確對比兩地的時區對象而非單一 Offset。
+
+### UI 異常：時區頁面佈局溢出與資源 404 (Layout Overflow & Asset 404)
+- **問題描述 (Issue)**: 
+  - Web 端點擊 InkWell 或頁面加載時出現 `RenderFlex needs layout` 崩潰聲明。
+  - 控制台出現多個 Icon 字型 404 錯誤。
+- **原因分析**:
+  - 資源問題：新增 Native 套件後未重啟 Dev Server，導致 Web 端字型資源映射失敗。
+  - 佈局問題：時區名稱長度不一，在 `Row` 中未使用 `Flexible` 約束，導致排版引擎無法計算寬度邊界。
+- **解決方案 (Solution)**:
+  - 指導用戶執行 `flutter clean` 並重啟應用程式以同步資源。
+  - 為時區名稱 Text 加入 `Flexible` 與 `TextOverflow.ellipsis` 保護。
+  - 使用 `FittedBox` 縮放大時鐘文字。
+
 ### 介面佈局：首頁行程卡片垂直溢出 (RenderFlex Overflow)
 - **問題描述 (Issue)**: 
   - 在小螢幕或內容文字較多時，行程卡片出現 `A RenderFlex overflowed by 2.0 pixels on the bottom` 警告。
