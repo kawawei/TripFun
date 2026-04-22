@@ -10,6 +10,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'currency_converter_page.dart';
 import 'accounting/accounting_page.dart';
 import 'world_clock_page.dart';
+import 'translator_page.dart';
 
 class ToolboxPage extends StatelessWidget {
   const ToolboxPage({super.key});
@@ -121,7 +122,12 @@ class ToolboxPage extends StatelessWidget {
                   subtitle: '語言溝通無障礙',
                   icon: LucideIcons.languages,
                   color: Colors.red,
-                  onTap: () {},
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const TranslatorPage(),
+                    ),
+                  ),
                 ),
               ]),
             ),
