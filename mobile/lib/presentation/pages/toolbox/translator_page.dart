@@ -198,15 +198,27 @@ class _TranslatorPageState extends ConsumerState<TranslatorPage> {
   };
 
   final List<Map<String, String>> _travelPhrases = [
-    {'en': 'Excuse me, where is the subway station?', 'zh': '請問地鐵站在哪裡？', 'ko': '실례합니다, 지하철역이 어디인가요?'},
-    {'en': 'How much does this cost?', 'zh': '這個多少錢？', 'ko': '이것은 얼마인가요?'},
-    {'en': 'Can I have the check, please?', 'zh': '請給我帳單。', 'ko': '계산서 좀 주시겠어요?'},
-    {'en': 'Where is the nearest pharmacy?', 'zh': '最近的藥局在哪裡？', 'ko': '가장 가까운 약국이 어디인가요?'},
-    {'en': 'I have a reservation.', 'zh': '我有預約。', 'ko': '예약했습니다.'},
-    {'en': 'Could you please help me?', 'zh': '可以請你幫幫我嗎？', 'ko': '도와주실 수 있나요?'},
-    {'en': 'I do not speak English very well.', 'zh': '我的英文不太好。', 'ko': '영어를 잘 못합니다.'},
-    {'en': 'What time is the check-out?', 'zh': '退房時間是什麼時候？', 'ko': '체크아웃 시간이 언제인가요?'},
+    // 交通與自駕
+    {'en': 'Excuse me, where is the subway station?', 'zh': '請問地鐵站在哪裡？', 'ko': '실례합니다, 지하철역이 어디인가요?', 'category': '交通'},
+    {'en': 'What kind of gasoline should I use for this car?', 'zh': '請問這台車要加什麼油？', 'ko': '이 차는 어떤 연료를 넣어야 하나요?', 'category': '交通'},
+    {'en': 'Does this car take gasoline or diesel?', 'zh': '這是汽油還是柴油？', 'ko': '이것은 휘발유인가요 아니면 경유인가요?', 'category': '交通'},
+    {'en': 'Fill it up, please.', 'zh': '請幫我加滿。', 'ko': '가득 채워주세요.', 'category': '交通'},
+    {'en': 'Where can I return the car?', 'zh': '我可以在哪裡還車？', 'ko': '어디에서 차를 반납할 수 있나요?', 'category': '交通'},
+    // 住宿
+    {'en': 'I have a reservation.', 'zh': '我有預約。', 'ko': '예약했습니다.', 'category': '住宿'},
+    {'en': 'What time is the check-out?', 'zh': '退房時間是什麼時候？', 'ko': '체크아웃 시간이 언제인가요?', 'category': '住宿'},
+    {'en': 'Can I leave my luggage here?', 'zh': '我可以把行李寄放在這裡嗎？', 'ko': '여기에 짐을 맡길 수 있나요?', 'category': '住宿'},
+    // 用餐
+    {'en': 'Can I have the check, please?', 'zh': '請給我帳單。', 'ko': '계산서 좀 주시겠어요?', 'category': '用餐'},
+    {'en': 'How much does this cost?', 'zh': '這個多少錢？', 'ko': '이것은 얼마인가요?', 'category': '用餐'},
+    // 緊急
+    {'en': 'Where is the nearest pharmacy?', 'zh': '最近的藥局在哪裡？', 'ko': '가장 가까운 약국이 어디인가요?', 'category': '緊急'},
+    {'en': 'Could you please help me?', 'zh': '可以請你幫幫我嗎？', 'ko': '도와주실 수 있나요?', 'category': '緊急'},
+    {'en': 'I do not speak English very well.', 'zh': '我的英文不太好。', 'ko': '영어를 잘 못합니다.', 'category': '緊急'},
   ];
+
+  String _selectedCategory = '全部';
+  final List<String> _categories = ['全部', '交通', '住宿', '用餐', '緊急'];
 
   @override
   void dispose() {
@@ -443,13 +455,51 @@ class _TranslatorPageState extends ConsumerState<TranslatorPage> {
                     ],
                   ),
                   const SizedBox(height: 16),
+                  // 分類標籤 / Category Chips
+                  SizedBox(
+                    height: 40,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _categories.length,
+                      separatorBuilder: (context, index) => const SizedBox(width: 8),
+                      itemBuilder: (context, index) {
+                        final category = _categories[index];
+                        final isSelected = _selectedCategory == category;
+                        return ChoiceChip(
+                          label: Text(category),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            if (selected) {
+                              setState(() => _selectedCategory = category);
+                            }
+                          },
+                          selectedColor: Colors.blue.withOpacity(0.2),
+                          labelStyle: TextStyle(
+                            color: isSelected ? Colors.blue[700] : Colors.grey[700],
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            side: BorderSide(
+                              color: isSelected ? Colors.blue : Colors.grey.shade300,
+                            ),
+                          ),
+                          showCheckmark: false,
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   ListView.separated(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _travelPhrases.length,
+                    itemCount: _travelPhrases.where((p) => _selectedCategory == '全部' || p['category'] == _selectedCategory).length,
                     separatorBuilder: (context, index) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
-                      final phrase = _travelPhrases[index];
+                      final filteredPhrases = _travelPhrases
+                          .where((p) => _selectedCategory == '全部' || p['category'] == _selectedCategory)
+                          .toList();
+                      final phrase = filteredPhrases[index];
                       return _buildPhraseCard(context, phrase, notifier);
                     },
                   ),
@@ -555,30 +605,61 @@ class _TranslatorPageState extends ConsumerState<TranslatorPage> {
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Text(
-              phrase['en']!,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.blue,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              phrase['zh']!,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
-            ),
-            Text(
-              phrase['ko']!,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          phrase['en']!,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(LucideIcons.volume2, color: Colors.blue, size: 18),
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(4),
+                        onPressed: () => ref.read(ttsProvider.notifier).speak(phrase['en']!, 'en'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    phrase['zh']!,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          phrase['ko']!,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(LucideIcons.volume2, color: Colors.grey, size: 18),
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(4),
+                        onPressed: () => ref.read(ttsProvider.notifier).speak(phrase['ko']!, 'ko'),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
