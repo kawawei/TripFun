@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:intl/intl.dart';
+import 'package:flutter_native_timezone/flutter_native_timezone.dart';
 
 class WorldClockPage extends StatefulWidget {
   const WorldClockPage({super.key});
@@ -21,8 +22,10 @@ class WorldClockPage extends StatefulWidget {
 class _WorldClockPageState extends State<WorldClockPage> {
   late Timer _timer;
   late DateTime _now;
+  String _localTimeZone = 'Asia/Taipei';
+  bool _isInitialized = false;
 
-  // 預設城市清單 / Default Cities
+  // 預設城市清單
   final List<Map<String, String>> _defaultCities = [
     {'name': '台北, 台灣', 'timezone': 'Asia/Taipei'},
     {'name': '首爾, 韓國', 'timezone': 'Asia/Seoul'},
@@ -34,7 +37,8 @@ class _WorldClockPageState extends State<WorldClockPage> {
   void initState() {
     super.initState();
     _now = DateTime.now();
-    // 每秒更新一次時間
+    _initLocalTimeZone();
+    
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) {
         setState(() {
@@ -44,25 +48,41 @@ class _WorldClockPageState extends State<WorldClockPage> {
     });
   }
 
+  Future<void> _initLocalTimeZone() async {
+    try {
+      final String timeZoneName = await FlutterNativeTimezone.getLocalTimezone();
+      setState(() {
+        _localTimeZone = timeZoneName;
+        _isInitialized = true;
+      });
+    } catch (e) {
+      setState(() => _isInitialized = true);
+    }
+  }
+
   @override
   void dispose() {
     _timer.cancel();
     super.dispose();
   }
 
-  // 計算時差文字 / Calculate time difference text
-  String _getTimeDiff(String locationName) {
+  // 計算時差文字
+  String _getTimeDiff(String targetTimezone) {
+    if (!_isInitialized) return '計算中...';
     try {
-      final location = tz.getLocation(locationName);
-      final nowInLocation = tz.TZDateTime.from(_now, location);
-      final offsetSeconds = nowInLocation.timeZoneOffset.inSeconds - _now.timeZoneOffset.inSeconds;
-      final offsetHours = offsetSeconds / 3600;
+      final localLoc = tz.getLocation(_localTimeZone);
+      final targetLoc = tz.getLocation(targetTimezone);
       
-      if (offsetHours == 0) return '與您所在地相同';
-      final sign = offsetHours > 0 ? '+' : '';
-      return '與所在地時差 $sign${offsetHours.toStringAsFixed(0).replaceFirst('.0', '')} 小時';
+      final nowInLocal = tz.TZDateTime.from(_now, localLoc);
+      final nowInTarget = tz.TZDateTime.from(_now, targetLoc);
+      
+      final diff = nowInTarget.timeZoneOffset.inHours - nowInLocal.timeZoneOffset.inHours;
+      
+      if (diff == 0) return '與所在地相同';
+      final sign = diff > 0 ? '+' : '';
+      return '與所在地時差 $sign$diff 小時';
     } catch (e) {
-      return '時區數據更新中';
+      return '資料準備中...';
     }
   }
 
@@ -79,7 +99,7 @@ class _WorldClockPageState extends State<WorldClockPage> {
       ),
       body: Column(
         children: [
-          // 所在地大時鐘區域 / Local Time Section
+          // 所在地大時鐘區域
           Container(
             width: double.infinity,
             margin: const EdgeInsets.all(20),
@@ -101,12 +121,15 @@ class _WorldClockPageState extends State<WorldClockPage> {
             ),
             child: Column(
               children: [
-                const Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(LucideIcons.mapPin, color: Colors.white70, size: 16),
-                    SizedBox(width: 8),
-                    Text('目前所在地', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    const Icon(LucideIcons.mapPin, color: Colors.white70, size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      '目前所在地 (${_localTimeZone.split('/').last.replaceAll('_', ' ')})', 
+                      style: const TextStyle(color: Colors.white70, fontSize: 14),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -144,6 +167,10 @@ class _WorldClockPageState extends State<WorldClockPage> {
   }
 
   Widget _buildCityCard(String cityName, String timezone) {
+    if (!_isInitialized) {
+      return const SizedBox(height: 80, child: Center(child: CircularProgressIndicator()));
+    }
+
     DateTime cityTime;
     bool isNight = false;
     
