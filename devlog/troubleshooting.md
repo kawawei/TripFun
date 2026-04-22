@@ -13,6 +13,24 @@
   - 將 `_currencyNames` 對照表改為 `static const` 類型，確保其在類別載入時即可被安全存取。
   - 移除 `RoundedRectangleBorder` 前的 `const` 關鍵字。
 
+### 開發錯誤：導入路徑層級誤判 (Invalid Import Path)
+- **問題描述 (Issue)**: 
+  - 在 `AddExpenseDialog.dart` 中嘗試導入 `AccountingProvider` 時報錯：`No such file or directory`。
+- **原因分析**:
+  - 錯誤地將位於 `lib/presentation/pages/toolbox/` 的檔案連跳三層 `../../../` 試圖進入 `lib/presentation/providers/`，實際上只需跳兩層 `../../` 即可到達 `presentation` 層級。
+- **解決方案 (Solution)**:
+  - 修正導入路徑為 `import '../../providers/accounting_provider.dart';`，並同步修正其他 `data/` 層級的路徑為三層 `../../../`。
+
+### UI 異常：金額輸入框游標偏移與過長 (Cursor Layout Issue)
+- **問題描述 (Issue)**: 
+  - 金額輸入框在使用 32px 大字體時，游標長度過長且提示文字 `hintText` 在部分平台發生偏移，游標看起來超出了輸入框範圍。
+- **原因分析**:
+  - `TextField` 的預設 `cursorHeight` 是根據字體高度生成的，且 `contentPadding: EdgeInsets.zero` 可能導致文字被裁切。
+- **解決方案 (Solution)**:
+  - 將 `fontSize` 稍微調降至 `28`，並加入 `textAlignVertical: TextAlignVertical.center`。
+  - 手動限制 `cursorHeight: 24` 以縮短游標長度。
+  - 設定 `contentPadding: EdgeInsets.symmetric(vertical: 8)` 增加呼吸空間。
+
 ### 介面佈局：首頁行程卡片垂直溢出 (RenderFlex Overflow)
 - **問題描述 (Issue)**: 
   - 在小螢幕或內容文字較多時，行程卡片出現 `A RenderFlex overflowed by 2.0 pixels on the bottom` 警告。

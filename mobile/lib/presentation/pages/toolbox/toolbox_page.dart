@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'currency_converter_page.dart';
+import 'accounting/accounting_page.dart';
 
 class ToolboxPage extends StatelessWidget {
   const ToolboxPage({super.key});
@@ -77,7 +78,12 @@ class ToolboxPage extends StatelessWidget {
                   subtitle: '管理旅程支出',
                   icon: LucideIcons.calculator,
                   color: Colors.orange,
-                  onTap: () {},
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AccountingPage(),
+                    ),
+                  ),
                 ),
                 _buildToolCard(
                   context,
