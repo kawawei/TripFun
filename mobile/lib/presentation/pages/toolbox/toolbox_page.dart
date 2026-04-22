@@ -11,6 +11,7 @@ import 'currency_converter_page.dart';
 import 'accounting/accounting_page.dart';
 import 'world_clock_page.dart';
 import 'translator_page.dart';
+import 'packing_list_page.dart';
 
 class ToolboxPage extends StatelessWidget {
   const ToolboxPage({super.key});
@@ -93,7 +94,12 @@ class ToolboxPage extends StatelessWidget {
                   subtitle: '出發前不再遺漏',
                   icon: LucideIcons.checkSquare,
                   color: Colors.green,
-                  onTap: () {},
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PackingListPage(),
+                    ),
+                  ),
                 ),
                 _buildToolCard(
                   context,

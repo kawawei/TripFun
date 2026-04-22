@@ -2,6 +2,23 @@
 
 ## 2026-04-23
 
+### 即時翻譯：MissingPluginException 與 Web 插件加載問題 (Plugin Loading & Missing Plugin)
+- **問題描述 (Issue)**: 
+  - 在 Web 環境下新增 `flutter_tts` 套件後，呼叫語音功能出現 `MissingPluginException(No implementation found for method setLanguage on channel flutter_tts)`。
+- **原因分析**:
+  - Flutter Web 在新增 Plugin 後，僅靠代碼層級的 Hot Reload/Restart 無法載入對應的 JavaScript 綁定介面，必須完整重啟開發伺服器。
+- **解決方案 (Solution)**:
+  - 停止目前的 `flutter run` 並重新啟動，確保插件資源正確映射。
+  - 在發音函數中加入 `try-catch` 保護，防止插件未準備好時導致應用崩潰。
+
+### 語音功能：音質與性別不一致 (Voice Quality & Gender Inconsistency)
+- **問題描述 (Issue)**: 
+  - 語音播放時，第一次可能是高品質女聲，但隨後會變成沙啞男聲。
+- **原因分析**:
+  - `flutter_tts` 在未指定 `setVoice` 的情況下，會隨機使用系統預設聲音。部分瀏覽器預設引擎不穩定。
+- **解決方案 (Solution)**:
+  - 實作語音選取邏輯，掃描所有可用聲音並優先過濾名稱包含 "Female" 或 "Google" 的高品質語音，強制固定發音人。
+
 ### 匯率換算：JS Runtime 與編譯錯誤 (Runtime & Compilation Errors)
 - **問題描述 (Issue)**: 
   - **JS Error**: 在 Web 環境下出現 `TypeError: Cannot read properties of undefined (reading 'Symbol(dartx._get)')`。
