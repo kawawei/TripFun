@@ -2,6 +2,18 @@
 
 ## 2026-04-22
 
+### UI 視覺偏差：導航欄與按鈕主要顏色偏紫 (Visual Hue Mismatch)
+- **問題描述 (Issue)**: 
+  - 使用者反饋導航欄選中塊與按鈕顏色看起來像「紫色」而非預期的「藍色」。
+  - **原因分析**:
+    1. 原本使用的 `AppColors.primary` (#6366F1) 屬於「靛藍色 (Indigo)」，在色譜上本就介於藍、紫之間，內含紅色成份較多，在部分螢幕上會產生紫色感。
+    2. Material 3 預設的 `primaryContainer` 是由種子色自動生成的淡化色調，視覺上更接近「淡紫色 (Lavender)」。
+- **解決方案 (Solution)**:
+  - 將品牌主色 `AppColors.primary` 更換為飽和度更高、不偏紅的 **「純正活力藍 (#0066FF)」**。
+  - 在 `app_theme.dart` 中手動設定 `ColorScheme`，將 `primary` 與 `primaryContainer` 統一，避免系統自動生成淡紫色偏差。
+  - 顯式定義 `NavigationBarTheme` 與 `FloatingActionButtonTheme` 的配件顏色。
+
+
 ### Flutter 編譯錯誤：CardTheme 類型不匹配 (Compilation Error)
 - **問題描述 (Issue)**: 
   - 在 `lib/core/theme/app_theme.dart` 中，發生 `The argument type 'CardTheme' can't be assigned to the parameter type 'CardThemeData?'` 錯誤。
