@@ -8,8 +8,8 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // 品牌色 / Brand Colors
-  static const Color primary = Color(0xFF6366F1); // 活力靛藍
-  static const Color primaryDark = Color(0xFF4F46E5);
+  static const Color primary = Color(0xFF0066FF); // 純正活力藍 (不偏紫)
+  static const Color primaryDark = Color(0xFF0052CC);
   static const Color secondary = Color(0xFF10B981); // 翡翠綠 (旅遊生機感)
   
   // 背景色 / Background Colors
