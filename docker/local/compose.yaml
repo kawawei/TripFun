@@ -1,0 +1,84 @@
+name: tripfun
+
+services:
+  # 1. 後端核心 (NestJS)
+  backend:
+    container_name: tripfun-backend
+    build:
+      context: ../../backend
+      dockerfile: docker/local/Dockerfile
+    ports:
+      - "9001:3000"
+    volumes:
+      - ../../backend:/app
+      - /app/node_modules
+    env_file:
+      - ../../env/local/.env
+    environment:
+      - DB_HOST=tripfun-db
+      - REDIS_HOST=tripfun-redis
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - tripfun-network
+
+  # 2. 即時通訊 (Go) - 使用 Image 模式 (暫時使用 busybox 佔位)
+  chat:
+    container_name: tripfun-chat
+    image: busybox:latest
+    command: tail -f /dev/null
+    ports:
+      - "9002:8080"
+    env_file:
+      - ../../env/local/.env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - tripfun-network
+
+  # 3. 資料庫 (PostgreSQL)
+  db:
+    container_name: tripfun-db
+    image: postgres:16-alpine
+    ports:
+      - "9432:5432"
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-tripfun_pass}
+      POSTGRES_DB: ${DB_NAME:-tripfun_db}
+    volumes:
+      - tripfun-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tripfun_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tripfun-network
+
+  # 4. 緩存與同步 (Redis)
+  redis:
+    container_name: tripfun-redis
+    image: redis:7-alpine
+    ports:
+      - "9379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tripfun-network
+
+networks:
+  tripfun-network:
+    driver: bridge
+
+volumes:
+  tripfun-db-data:

@@ -26,7 +26,7 @@ class MainScreen extends ConsumerWidget {
       const HomePage(),
       // const ExplorePage(),
       const ToolboxPage(),
-      const ProfilePage(),
+      // const ProfilePage(),
     ];
 
     return Scaffold(
@@ -65,11 +65,11 @@ class MainScreen extends ConsumerWidget {
               selectedIcon: Icon(LucideIcons.layoutGrid, color: Colors.white),
               label: '工具',
             ),
-            NavigationDestination(
-              icon: Icon(LucideIcons.user),
-              selectedIcon: Icon(LucideIcons.user, color: Colors.white),
-              label: '設定',
-            ),
+            // NavigationDestination(
+            //   icon: Icon(LucideIcons.user),
+            //   selectedIcon: Icon(LucideIcons.user, color: Colors.white),
+            //   label: '設定',
+            // ),
           ],
         ),
       ),

@@ -2,6 +2,47 @@
 
 ## 2026-04-23
 
+### 後端容器化初始化：指令缺失與依賴同步問題 (Backend Containerization: Command Not Found & Dependency Sync)
+- **問題描述 (Issue)**: 
+  - `tripfun-backend` 啟動失敗，容器日誌顯示 `sh: nest: not found`。
+  - Host 端 IDE 出現大量 `@nestjs/common` 等模組找不到的型別錯誤 (Lint Errors)。
+  - `docker compose up` 執行時因 `busybox` 鏡像下載中斷導致服務無法啟動。
+- **原因分析**:
+  - **指令定位問題**：`package.json` 中的 `scripts` 直接使用 `nest` 指令，但在專案未全域安裝 `@nestjs/cli` 的容器環境中，必須透過 `pnpm exec` 才能正確調用 `node_modules/.bin` 下的二進制文件。
+  - **環境隔離副作用**：由於開發策略為 Docker-First，本地 host 目錄最初沒有 `node_modules`，導致 IDE 解析失敗。
+  - **網路不穩**：Docker Compose 在同時執行 Build 與 Pull 時，若網路不穩易導致層級下載中斷。
+- **解決方案 (Solution)**:
+  - **Dockerfile 修復**：將 `CMD` 改為 `pnpm exec nest start --watch`。
+  - **IDE 報錯修復**：配合用戶要求在 host 端執行 `pnpm install` 補全型別宣告。
+  - **鏡像與佔位處理**：手動執行 `docker pull busybox:latest` 確保資源就緒，並在 `compose.yaml` 中使用其作為 `chat` 服務的臨時佔位符。
+- **驗證結果**:
+  - 容器顯示 `tripfun-backend Up`。
+  - API `http://localhost:9001/trips` 成功回傳預設 JSON 數據。
+  - 本地 IDE 紅字消失。
+
+
+### 安全憑證：編譯錯誤 (Compilation Error: Const & Typo)
+- **問題描述 (Issue)**: 
+  - 建立 `SecurityCredentialsPage` 後出現 `Cannot invoke a non-'const' constructor where a const expression is expected` 以及 `Member not found: 'whiteb70'` 錯誤。
+- **原因分析**:
+  - 錯誤地在 `Row` 前使用了 `const` 關鍵字，而子組件 `Container` 並非 `const` 構造函數。
+  - 將 `Colors.white70` 誤打為 `Colors.whiteb70`。
+- **解決方案 (Solution)**:
+  - 移除 `Row` 前的 `const` 關鍵字。
+  - 修正顏色拼寫為 `white70`。
+
+### UI 異常：Web 佈局卡死與點擊無反應 (Layout Freeze & No Response)
+- **問題描述 (Issue)**: 
+  - 頁面渲染後，移動滑鼠導致控制台瘋狂出現 `Assertion failed: ...box.dart:2251:12`，且所有點擊事件（含返回鍵）均失效。
+- **原因分析**:
+  - **佈局衝突破潰**：在 `SingleChildScrollView` + `Column` 中使用了多個 `ListView/GridView` 並設定 `shrinkWrap: true`。在 Flutter Web 引擎下，這可能導致計算寬高度時無法收斂（呈現高度為 Infinity），進而讓 Hit-Testing 邏輯崩潰，UI 鎖死。
+  - **狀態殘留**：先前的編譯錯誤導致 Flutter 引擎狀態異常，即便代碼修復後，Web 端若不重整瀏覽器，滑鼠追蹤器 (Mouse Tracker) 仍會因舊有的 RenderObject 資訊不符而報錯。
+- **解決方案 (Solution)**:
+  - **重構頁面**：棄用 `SingleChildScrollView`，改用高性能的 **`CustomScrollView` + `Sliver (SliverGrid/SliverList)`** 佈局，從根本上解決 Web 端的滾動佈局衝突。
+  - **狀態重置**：指導用戶重新整理瀏覽器或執行 Hot Restart，清除舊有的報錯狀態。
+  - **反饋強化**：加入 `ScaffoldMessenger.showSnackBar` 提供點擊時的視覺反饋。
+
+
 ### 即時翻譯：MissingPluginException 與 Web 插件加載問題 (Plugin Loading & Missing Plugin)
 - **問題描述 (Issue)**: 
   - 在 Web 環境下新增 `flutter_tts` 套件後，呼叫語音功能出現 `MissingPluginException(No implementation found for method setLanguage on channel flutter_tts)`。
