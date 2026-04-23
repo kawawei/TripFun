@@ -12,7 +12,7 @@ import 'accounting/accounting_page.dart';
 import 'world_clock_page.dart';
 import 'translator_page.dart';
 import 'packing_list_page.dart';
-import 'security_credentials_page.dart';
+// import 'security_credentials_page.dart';
 
 class ToolboxPage extends StatelessWidget {
   const ToolboxPage({super.key});
@@ -102,6 +102,7 @@ class ToolboxPage extends StatelessWidget {
                     ),
                   ),
                 ),
+                /*
                 _buildToolCard(
                   context,
                   title: '安全憑證',
@@ -115,6 +116,7 @@ class ToolboxPage extends StatelessWidget {
                     ),
                   ),
                 ),
+                */
 
                 _buildToolCard(
                   context,

@@ -1,9 +1,11 @@
 /**
  * @file security_credentials_page.dart
  * @description 安全憑證頁面 / Security Credentials Page
- * @description_zh 提供旅遊證件、機票等敏感文件的加密備份與管理功能
- * @description_en Provides encrypted backup and management for sensitive travel documents like passports and tickets
+ * @description_zh 提供旅遊證件、機票等敏感文件的加密備份與管理功能，採 Sliver 高性能佈局
+ * @description_en Provides encrypted backup for sensitive travel documents using high-performance Sliver layout
  */
+
+library;
 
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -15,42 +17,70 @@ class SecurityCredentialsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('安全憑證'),
-        actions: [
-          IconButton(
-            icon: const Icon(LucideIcons.settings),
-            onPressed: () {},
+      backgroundColor: AppColors.background,
+      body: CustomScrollView(
+        slivers: [
+          // 自定義 AppBar / Custom AppBar
+          SliverAppBar(
+            title: const Text('安全憑證'),
+            floating: true,
+            pinned: true,
+            backgroundColor: AppColors.background,
+            actions: [
+              IconButton(
+                icon: const Icon(LucideIcons.settings),
+                onPressed: () => _showToast(context, '設定開發中'),
+              ),
+            ],
+          ),
+
+          // 頂部安全資訊 / Top Security Banner
+          SliverToBoxAdapter(
+            child: _buildSecurityBanner(context),
+          ),
+
+          // 證件分類標題 / Category Header
+          SliverToBoxAdapter(
+            child: _buildSectionHeader(context, '證件分類'),
+          ),
+
+          // 分類網格 / Category Grid (Sliver)
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            sliver: _buildCategorySliverGrid(context),
+          ),
+
+          // 重要文件標題 / Document Header
+          SliverToBoxAdapter(
+            child: _buildSectionHeader(context, '重要文件'),
+          ),
+
+          // 文件列表 / Document List (Sliver)
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
+            sliver: _buildDocumentSliverList(context),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSecurityBanner(),
-            const SizedBox(height: 24),
-            _buildSectionHeader('證件分類'),
-            const SizedBox(height: 12),
-            _buildCategoryGrid(),
-            const SizedBox(height: 32),
-            _buildSectionHeader('重要文件'),
-            const SizedBox(height: 12),
-            _buildDocumentList(),
-            const SizedBox(height: 100), // Bottom padding
-          ],
-        ),
-      ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
+        onPressed: () => _showToast(context, '掃描功能開發中'),
         icon: const Icon(LucideIcons.scanLine),
         label: const Text('掃描新文件'),
       ),
     );
   }
 
-  /// 頂部安全資訊橫幅 / Top security info banner
-  Widget _buildSecurityBanner() {
+  void _showToast(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
+  Widget _buildSecurityBanner(BuildContext context) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -73,18 +103,18 @@ class SecurityCredentialsPage extends StatelessWidget {
           ),
         ],
       ),
-      child: const Row(
+      child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
+            padding: const EdgeInsets.all(12),
+            decoration: const BoxDecoration(
               color: Colors.white24,
               shape: BoxShape.circle,
             ),
-            child: Icon(LucideIcons.shieldCheck, color: Colors.white, size: 28),
+            child: const Icon(LucideIcons.shieldCheck, color: Colors.white, size: 28),
           ),
-          SizedBox(width: 16),
-          Expanded(
+          const SizedBox(width: 16),
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -98,9 +128,9 @@ class SecurityCredentialsPage extends StatelessWidget {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  '所有憑證僅儲存於此裝置，確保您的數據隱私。',
+                  '所有憑證僅儲存於此裝置，確保數據隱私。',
                   style: TextStyle(
-                    color: Colors.whiteb70,
+                    color: Colors.white70,
                     fontSize: 12,
                   ),
                 ),
@@ -112,10 +142,9 @@ class SecurityCredentialsPage extends StatelessWidget {
     );
   }
 
-  /// 區塊標題 / Section Header
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -128,7 +157,7 @@ class SecurityCredentialsPage extends StatelessWidget {
             ),
           ),
           TextButton(
-            onPressed: () {},
+            onPressed: () => _showToast(context, '查看全部功能開發中'),
             child: const Text('全部'),
           ),
         ],
@@ -136,8 +165,7 @@ class SecurityCredentialsPage extends StatelessWidget {
     );
   }
 
-  /// 分類網格 / Category Grid
-  Widget _buildCategoryGrid() {
+  Widget _buildCategorySliverGrid(BuildContext context) {
     final categories = [
       {'title': '護照', 'icon': LucideIcons.contact, 'color': Colors.blue},
       {'title': '機票', 'icon': LucideIcons.plane, 'color': Colors.indigo},
@@ -145,137 +173,125 @@ class SecurityCredentialsPage extends StatelessWidget {
       {'title': '簽證', 'icon': LucideIcons.stamp, 'color': Colors.amber},
     ];
 
-    return GridView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+    return SliverGrid(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
         childAspectRatio: 1.6,
       ),
-      itemCount: categories.length,
-      itemBuilder: (context, index) {
-        final item = categories[index];
-        return Container(
-          decoration: BoxDecoration(
-            color: (item['color'] as Color).withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: (item['color'] as Color).withValues(alpha: 0.2),
-              width: 1,
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final item = categories[index];
+          final color = item['color'] as Color;
+          return Container(
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: color.withValues(alpha: 0.2)),
             ),
-          ),
-          child: InkWell(
-            onTap: () {},
-            borderRadius: BorderRadius.circular(16),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(item['icon'] as IconData, color: item['color'] as Color),
-                const SizedBox(height: 8),
-                Text(
-                  item['title'] as String,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+            child: InkWell(
+              onTap: () => _showToast(context, '正在開啟${item['title']}分類'),
+              borderRadius: BorderRadius.circular(16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(item['icon'] as IconData, color: color),
+                  const SizedBox(height: 8),
+                  Text(
+                    item['title'] as String,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+        childCount: categories.length,
+      ),
     );
   }
 
-  /// 文件列表 / Document List
-  Widget _buildDocumentList() {
+  Widget _buildDocumentSliverList(BuildContext context) {
     final documents = [
       {
         'title': '我的護照',
         'subtitle': '效期至 2028/10/12',
-        'type': '護照',
         'icon': LucideIcons.contact,
         'status': '有效',
+        'statusColor': AppColors.success,
       },
       {
         'title': '國泰航空 - 晚班機',
         'subtitle': '航班號 CX451',
-        'type': '機票',
         'icon': LucideIcons.plane,
         'status': '即將到來',
+        'statusColor': AppColors.info,
       },
     ];
 
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: documents.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final doc = documents[index];
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(doc['icon'] as IconData, color: AppColors.primary),
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final doc = documents[index];
+          final sColor = doc['statusColor'] as Color;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.border),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              child: InkWell(
+                onTap: () => _showToast(context, '正在讀取文件: ${doc['title']}'),
+                child: Row(
                   children: [
-                    Text(
-                      doc['title'] as String,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(doc['icon'] as IconData, color: AppColors.primary),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            doc['title'] as String,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            doc['subtitle'] as String,
+                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      doc['subtitle'] as String,
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 13,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: sColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        doc['status'] as String,
+                        style: TextStyle(color: sColor, fontSize: 11, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  doc['status'] as String,
-                  style: const TextStyle(
-                    color: AppColors.success,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+            ),
+          );
+        },
+        childCount: documents.length,
+      ),
     );
   }
 }
