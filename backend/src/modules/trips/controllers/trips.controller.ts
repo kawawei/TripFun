@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { TripsService } from '../services/trips.service';
 
 @Controller('trips')
@@ -8,6 +8,11 @@ export class TripsController {
   @Get()
   async findAll() {
     return this.tripsService.findAll();
+  }
+
+  @Get(':id/activities')
+  async findActivities(@Param('id') id: string) {
+    return this.tripsService.findActivitiesByTripId(id);
   }
 
   @Post()

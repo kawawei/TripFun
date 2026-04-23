@@ -6,80 +6,92 @@
  */
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-
+import '../../../../domain/entities/trip_entity.dart';
+import '../../../../domain/entities/activity_entity.dart';
+import '../provider/activity_provider.dart';
 import 'activity_detail_page.dart';
 
-class TripDetailPage extends StatelessWidget {
-  final String title;
+class TripDetailPage extends ConsumerWidget {
+  final TripEntity trip;
 
-  const TripDetailPage({super.key, required this.title});
+  const TripDetailPage({super.key, required this.trip});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activitiesAsync = ref.watch(activitiesProvider(trip.id));
+    final primaryColor = trip.colorValue != null ? Color(trip.colorValue!) : Theme.of(context).primaryColor;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: CustomScrollView(
         slivers: [
-          _buildSliverAppBar(context),
-          _buildDaySelector(),
-          SliverList(
-            delegate: SliverChildListDelegate([
-              const SizedBox(height: 16),
-              _buildTimelineActivity(
-                context,
-                time: '06:00',
-                title: '洛杉磯國際機場 (LAX)',
-                subtitle: '抵達大廳，準備取車',
-                icon: LucideIcons.planeLanding,
-                isFirst: true,
-                personalInfo: {
-                  '航班編號': 'BR12',
-                  '航空公司': '長榮航空',
-                  '航廈': 'Tom Bradley (TBIT)',
-                  '抵達時間': '06:00 AM',
-                },
+          _buildSliverAppBar(context, primaryColor),
+          _buildDaySelector(primaryColor),
+          activitiesAsync.when(
+            data: (activities) => activities.isEmpty
+                ? const SliverFillRemaining(
+                    child: Center(child: Text('目前沒有活動安排')),
+                  )
+                : SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final activity = activities[index];
+                        return _buildTimelineActivity(
+                          context,
+                          activity: activity,
+                          primaryColor: primaryColor,
+                          isFirst: index == 0,
+                          isLast: index == activities.length - 1,
+                        );
+                      },
+                      childCount: activities.length,
+                    ),
+                  ),
+            loading: () => const SliverFillRemaining(
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (err, stack) => SliverFillRemaining(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(LucideIcons.alertCircle, color: Colors.red, size: 48),
+                    const SizedBox(height: 16),
+                    Text('加載活動失敗: $err'),
+                    TextButton(
+                      onPressed: () => ref.refresh(activitiesProvider(trip.id)),
+                      child: const Text('重試'),
+                    ),
+                  ],
+                ),
               ),
-              _buildTimelineActivity(
-                context,
-                time: '08:00',
-                title: '現存最古老的麥當勞',
-                subtitle: '位於 Downey 的經典旗艦店',
-                icon: LucideIcons.utensils,
-              ),
-              _buildTimelineActivity(
-                context,
-                time: '10:30',
-                title: '格里菲斯天文台',
-                subtitle: '俯瞰洛杉磯全景',
-                icon: LucideIcons.mountain,
-              ),
-              _buildTimelineActivity(
-                context,
-                time: '13:00',
-                title: 'In-N-Out Burger',
-                subtitle: '西岸必吃漢堡',
-                icon: LucideIcons.beef,
-                isLast: true,
-              ),
-            ]),
+            ),
           ),
+          const SliverToBoxAdapter(child: SizedBox(height: 80)), // 底部留白 / Bottom padding
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
-        child: const Icon(LucideIcons.plus),
+        backgroundColor: primaryColor,
+        child: const Icon(LucideIcons.plus, color: Colors.white),
       ),
     );
   }
 
-  Widget _buildSliverAppBar(BuildContext context) {
+  Widget _buildSliverAppBar(BuildContext context, Color primaryColor) {
     return SliverAppBar(
       expandedHeight: 200,
       pinned: true,
       elevation: 0,
+      backgroundColor: primaryColor,
+      iconTheme: const IconThemeData(color: Colors.white),
       flexibleSpace: FlexibleSpaceBar(
-        title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text(
+          trip.title,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+        ),
         background: Stack(
           fit: StackFit.expand,
           children: [
@@ -89,19 +101,19 @@ class TripDetailPage extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Theme.of(context).primaryColor,
-                    Theme.of(context).primaryColor.withValues(alpha: 0.8),
+                    primaryColor,
+                    primaryColor.withOpacity(0.8),
                   ],
                 ),
               ),
-              child: const Icon(LucideIcons.palmtree, size: 80, color: Colors.white24),
+              child: Icon(_getIconData(trip.iconName), size: 80, color: Colors.white24),
             ),
             const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black45],
+                  colors: [Colors.transparent, Colors.black26],
                 ),
               ),
             ),
@@ -115,7 +127,8 @@ class TripDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildDaySelector() {
+  Widget _buildDaySelector(Color primaryColor) {
+    // 這裡暫時手動生成日期範圍，實際可從 trip.startDate/endDate 計算 / Currently manual, can be calculated from startDate/endDate
     return SliverToBoxAdapter(
       child: Container(
         height: 80,
@@ -128,23 +141,23 @@ class TripDetailPage extends StatelessWidget {
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           children: [
-            _buildDayItem('4/25', '六', false),
-            _buildDayItem('4/26', '日', true),
-            _buildDayItem('4/27', '一', false),
-            _buildDayItem('4/28', '二', false),
-            _buildDayItem('4/29', '三', false),
+            _buildDayItem('4/25', '六', true, primaryColor),
+            _buildDayItem('4/26', '日', false, primaryColor),
+            _buildDayItem('4/27', '一', false, primaryColor),
+            _buildDayItem('4/28', '二', false, primaryColor),
+            _buildDayItem('4/29', '三', false, primaryColor),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDayItem(String date, String day, bool isSelected) {
+  Widget _buildDayItem(String date, String day, bool isSelected, Color primaryColor) {
     return Container(
       width: 70,
       margin: const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFF0D9488) : Colors.grey.shade100,
+        color: isSelected ? primaryColor : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -159,18 +172,17 @@ class TripDetailPage extends StatelessWidget {
 
   Widget _buildTimelineActivity(
     BuildContext context, {
-    required String time,
-    required String title,
-    required String subtitle,
-    required IconData icon,
+    required ActivityEntity activity,
+    required Color primaryColor,
     bool isFirst = false,
     bool isLast = false,
-    Map<String, String>? personalInfo,
   }) {
+    final iconData = _getActivityIconData(activity.iconName, activity.type);
+    final hasPersonalInfo = activity.personalInfo != null && activity.personalInfo!.isNotEmpty;
+
     return IntrinsicHeight(
       child: Row(
         children: [
-          // Timeline 軸線部分 / Timeline axis section
           const SizedBox(width: 24),
           Column(
             children: [
@@ -183,17 +195,17 @@ class TripDetailPage extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: personalInfo != null ? const Color(0xFF0D9488) : Colors.white,
+                  color: hasPersonalInfo ? primaryColor : Colors.white,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: personalInfo != null ? const Color(0xFF0D9488) : Colors.grey.shade300,
+                    color: hasPersonalInfo ? primaryColor : Colors.grey.shade300,
                     width: 2,
                   ),
                 ),
                 child: Icon(
-                  icon,
+                  iconData,
                   size: 20,
-                  color: personalInfo != null ? Colors.white : Colors.grey.shade600,
+                  color: hasPersonalInfo ? Colors.white : Colors.grey.shade600,
                 ),
               ),
               Expanded(
@@ -205,7 +217,6 @@ class TripDetailPage extends StatelessWidget {
             ],
           ),
           const SizedBox(width: 16),
-          // 內容部分 / Content section
           Expanded(
             child: InkWell(
               onTap: () {
@@ -213,9 +224,9 @@ class TripDetailPage extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => ActivityDetailPage(
-                      title: title,
-                      category: '旅遊活動',
-                      personalInfo: personalInfo,
+                      title: activity.title,
+                      category: activity.type,
+                      personalInfo: activity.personalInfo?.map((k, v) => MapEntry(k, v.toString())),
                     ),
                   ),
                 );
@@ -226,16 +237,16 @@ class TripDetailPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      time,
-                      style: const TextStyle(
+                      activity.time,
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF0D9488),
+                        color: primaryColor,
                         fontSize: 14,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      title,
+                      activity.title,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -243,24 +254,24 @@ class TripDetailPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      subtitle,
+                      activity.subtitle ?? '',
                       style: TextStyle(
                         color: Colors.grey.shade600,
                         fontSize: 13,
                       ),
                     ),
-                    if (personalInfo != null)
+                    if (hasPersonalInfo)
                       Container(
                         margin: const EdgeInsets.only(top: 8),
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                          color: primaryColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: const Text(
+                        child: Text(
                           '包含預訂資訊',
                           style: TextStyle(
-                            color: Color(0xFF0D9488),
+                            color: primaryColor,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
@@ -275,5 +286,34 @@ class TripDetailPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  IconData _getIconData(String? name) {
+    switch (name) {
+      case 'palmtree': return LucideIcons.palmtree;
+      case 'flower2': return LucideIcons.flower2;
+      case 'mountain': return LucideIcons.mountain;
+      case 'plane': return LucideIcons.plane;
+      default: return LucideIcons.map;
+    }
+  }
+
+  IconData _getActivityIconData(String? name, String type) {
+    if (name != null) {
+      switch (name) {
+        case 'plane-landing': return LucideIcons.planeLanding;
+        case 'utensils': return LucideIcons.utensils;
+        case 'mountain': return LucideIcons.mountain;
+        case 'beef': return LucideIcons.beef;
+      }
+    }
+    
+    switch (type) {
+      case 'FLIGHT': return LucideIcons.plane;
+      case 'HOTEL': return LucideIcons.hotel;
+      case 'FOOD': return LucideIcons.utensils;
+      case 'TRANSPORT': return LucideIcons.car;
+      default: return LucideIcons.mapPin;
+    }
   }
 }

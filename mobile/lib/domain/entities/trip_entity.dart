@@ -6,21 +6,27 @@ library;
 
 class TripEntity {
   final String id;
-  final String name;
+  final String title;
+  final String? location;
   final DateTime startDate;
   final DateTime endDate;
-  final String? description;
-  final String? countryCode; // 用於顯示國旗 Icon
+  final int memberCount;
+  final String? iconName;
+  final int? colorValue;
+  final String status;
 
   TripEntity({
     required this.id,
-    required this.name,
+    required this.title,
+    this.location,
     required this.startDate,
     required this.endDate,
-    this.description,
-    this.countryCode,
+    this.memberCount = 1,
+    this.iconName,
+    this.colorValue,
+    this.status = 'ACTIVE',
   });
 
-  // 輔助方法：計算旅程天數
+  // 輔助方法：計算旅程天數 / Helper: Calculate trip duration in days
   int get durationDays => endDate.difference(startDate).inDays + 1;
 }

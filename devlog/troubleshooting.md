@@ -2,6 +2,32 @@
 
 ## 2026-04-23
 
+### Flutter 編譯錯誤：缺失 Material 導入 (Compilation Error: Missing Material Import)
+- **問題描述 (Issue)**: 
+  - 重構 `HomePage` 後出現大量錯誤：`The method 'Row' isn't defined for the type 'HomePage'`, `The getter 'Colors' isn't defined` 等。
+- **原因分析**:
+  - 在執行 `replace_file_content` 時，意外移除了文件頂部的 `import 'package:flutter/material.dart';`，導致所有基礎組件與佈局類別均無法識別。
+- **解決方案 (Solution)**:
+  - 在 `home_page.dart` 文件頂部補回 `import 'package:flutter/material.dart';`。
+  - 同步清理 `trip_detail_page.dart` 中混亂的重複導入語句。
+
+### Web 跨網域衝突：CORS 政策阻擋 (Web: CORS Policy Blocked)
+- **問題描述 (Issue)**: 
+  - 運行 Flutter Web 版時，請求後端 API 報錯：`Access to XMLHttpRequest at 'http://localhost:9001/trips' from origin 'http://localhost:3000' has been blocked by CORS policy`。
+- **原因分析**:
+  - 瀏覽器的安全性限制。Web 應用程式 (`localhost:3000`) 請求不同端口的後端 (`localhost:9001`) 時，若伺服器未明確聲明允許存取，則會被阻擋。
+- **解決方案 (Solution)**:
+  - 修改後端 `backend/src/main.ts`，在 `app.listen()` 前加入 `app.enableCors()`。
+
+### 運行時異常：熱重載拒絕 (Runtime: Hot Reload Rejected)
+- **問題描述 (Issue)**: 
+  - 修改建構子後，控制台報錯：`Exception: Const class cannot remove fields: TripDetailPage`，且 UI 未更新。
+- **原因分析**:
+  - Flutter 的 **Hot Reload (熱重載)** 不支援對 `const` 類別建構子參數的結構性變更（原本為傳入 `title` 字串，改為傳入 `trip` 對象）。
+- **解決方案 (Solution)**:
+  - 執行 **Hot Restart (熱重啟)** 以重新加載所有狀態。
+
+
 ### 後端容器化初始化：指令缺失與依賴同步問題 (Backend Containerization: Command Not Found & Dependency Sync)
 - **問題描述 (Issue)**: 
   - `tripfun-backend` 啟動失敗，容器日誌顯示 `sh: nest: not found`。

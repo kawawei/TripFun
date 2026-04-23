@@ -7,6 +7,7 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
   
   const port = process.env.PORT || 3000;
+  app.enableCors(); // 啟用跨來源資源共享 / Enable CORS
   await app.listen(port);
   
   logger.log(`TripFun Backend is running on: http://localhost:${port}`);

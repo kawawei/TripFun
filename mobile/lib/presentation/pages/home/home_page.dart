@@ -6,16 +6,21 @@
  */
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../widgets/create_trip_modal.dart';
-
+import '../../../domain/entities/trip_entity.dart';
+import 'provider/home_provider.dart';
 import 'pages/trip_detail_page.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tripsAsync = ref.watch(tripsProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('我的行程'),
@@ -30,48 +35,51 @@ class HomePage extends StatelessWidget {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          _buildTripCard(
-            context,
-            title: '洛杉磯公路旅行',
-            dates: '2026/04/25 - 04/29',
-            location: '美國, 加州',
-            memberCount: 2,
-            imageColor: Colors.teal.shade50,
-            icon: LucideIcons.palmtree,
-            iconColor: Colors.teal,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const TripDetailPage(title: '洛杉磯公路旅行')),
-            ),
+      body: tripsAsync.when(
+        data: (trips) => trips.isEmpty
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(LucideIcons.map, size: 64, color: Colors.grey.shade300),
+                    const SizedBox(height: 16),
+                    Text('目前沒有行程', style: TextStyle(color: Colors.grey.shade500)),
+                  ],
+                ),
+              )
+            : ListView.separated(
+                padding: const EdgeInsets.all(20),
+                itemCount: trips.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 16),
+                itemBuilder: (context, index) {
+                  final trip = trips[index];
+                  return _buildTripCard(
+                    context,
+                    trip: trip,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TripDetailPage(trip: trip),
+                      ),
+                    ),
+                  );
+                },
+              ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(LucideIcons.alertCircle, color: Colors.red, size: 48),
+              const SizedBox(height: 16),
+              Text('加載失敗: $err'),
+              TextButton(
+                onPressed: () => ref.refresh(tripsProvider),
+                child: const Text('重試'),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          _buildTripCard(
-            context,
-            title: '東京櫻花季之旅',
-            dates: '2026/03/25 - 03/30',
-            location: '日本, 東京',
-            memberCount: 4,
-            imageColor: Colors.pink.shade50,
-            icon: LucideIcons.flower2,
-            iconColor: Colors.pink,
-            onTap: () {},
-          ),
-          const SizedBox(height: 16),
-          _buildTripCard(
-            context,
-            title: '瑞士阿爾卑斯山健行',
-            dates: '2026/07/15 - 07/25',
-            location: '瑞士, 策馬特',
-            memberCount: 2,
-            imageColor: Colors.blue.shade50,
-            icon: LucideIcons.mountain,
-            iconColor: Colors.blue,
-            onTap: () {},
-          ),
-        ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => CreateTripModal.show(context),
@@ -83,15 +91,15 @@ class HomePage extends StatelessWidget {
 
   Widget _buildTripCard(
     BuildContext context, {
-    required String title,
-    required String dates,
-    required String location,
-    required int memberCount,
-    required Color imageColor,
-    required IconData icon,
-    required Color iconColor,
+    required TripEntity trip,
     required VoidCallback onTap,
   }) {
+    final iconData = _getIconData(trip.iconName);
+    final primaryColor = trip.colorValue != null ? Color(trip.colorValue!) : Theme.of(context).primaryColor;
+    final backgroundColor = primaryColor.withOpacity(0.1);
+    
+    final dateRange = '${DateFormat('yyyy/MM/dd').format(trip.startDate)} - ${DateFormat('MM/dd').format(trip.endDate)}';
+
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -108,9 +116,9 @@ class HomePage extends StatelessWidget {
             Container(
               width: 100,
               constraints: const BoxConstraints(minHeight: 120),
-              color: imageColor,
+              color: backgroundColor,
               child: Center(
-                child: Icon(icon, color: iconColor, size: 32),
+                child: Icon(iconData, color: primaryColor, size: 32),
               ),
             ),
             // 內容區域 / Content area
@@ -122,7 +130,7 @@ class HomePage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      trip.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -136,7 +144,7 @@ class HomePage extends StatelessWidget {
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            dates,
+                            dateRange,
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: Colors.grey.shade600,
                                 ),
@@ -151,7 +159,7 @@ class HomePage extends StatelessWidget {
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            location,
+                            trip.location ?? '未知地點',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -167,7 +175,7 @@ class HomePage extends StatelessWidget {
                         Icon(LucideIcons.users, size: 14, color: Theme.of(context).primaryColor),
                         const SizedBox(width: 4),
                         Text(
-                          '$memberCount 位成員',
+                          '${trip.memberCount} 位成員',
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: Theme.of(context).primaryColor,
                                 fontWeight: FontWeight.w600,
@@ -187,5 +195,20 @@ class HomePage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  IconData _getIconData(String? name) {
+    switch (name) {
+      case 'palmtree':
+        return LucideIcons.palmtree;
+      case 'flower2':
+        return LucideIcons.flower2;
+      case 'mountain':
+        return LucideIcons.mountain;
+      case 'plane':
+        return LucideIcons.plane;
+      default:
+        return LucideIcons.map;
+    }
   }
 }
