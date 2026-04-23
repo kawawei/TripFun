@@ -294,21 +294,55 @@ async checkPermission(userId: string, tripId: string) { ... }
 
 ---
 
-## 7. 數據模型 (Initial Data Models)
+## 7. 數據模型與詳細表結構 (Data Models & Database Schema)
 
 ### 7.1 trips (行程表)
-* `id`: UUID (PK)
-* `name`: VARCHAR(100)
-* `share_token`: UUID (唯一邀請連結)
-* `owner_id`: UUID (FK)
-* `start_date`: TIMESTAMP (UTC)
-* `end_date`: TIMESTAMP (UTC)
+存儲行程的主體資訊與元數據。
+
+| 欄位名 | 類型 | 約束 | 說明 |
+| :--- | :--- | :--- | :--- |
+| `id` | UUID | PK, DEFAULT uuid_generate_v4() | 行程唯一識別碼 |
+| `title` | VARCHAR(100) | NOT NULL | 行程標題 (如：東京五天四夜櫻花季) |
+| `location` | VARCHAR(255) | | 主要旅遊國家或城市 |
+| `startDate` | TIMESTAMP | NOT NULL | 行程開始日期 (UTC) |
+| `endDate` | TIMESTAMP | NOT NULL | 行程結束日期 (UTC) |
+| `memberCount` | INTEGER | DEFAULT 1 | 成員數量緩存（加速查詢） |
+| `share_token` | UUID | UNIQUE, DEFAULT uuid_generate_v4() | 用於行程分享與加入的密語 |
+| `icon_name` | VARCHAR(50) | | 自定義卡片圖示名稱 |
+| `color_value` | INTEGER | | 自定義卡片色值 (ARGB) |
+| `owner_id` | UUID | FK -> users(id) | 行程建立者 ID |
+| `status` | VARCHAR(20) | DEFAULT 'ACTIVE' | 狀態：ACTIVE (進行中), ARCHIVED (封存) |
+| `created_at` | TIMESTAMP | DEFAULT NOW() | 建立時間 |
+| `updated_at` | TIMESTAMP | DEFAULT NOW() | 更新時間 |
 
 ### 7.2 trip_members (行程成員關聯表)
-* `trip_id`: UUID (FK)
-* `user_id`: UUID (FK)
-* `role`: VARCHAR(20) (OWNER, MANAGER, VIEWER)
-* `joined_at`: TIMESTAMP (UTC)
+定義行程的參與者及其角色。
+
+| 欄位名 | 類型 | 約束 | 說明 |
+| :--- | :--- | :--- | :--- |
+| `trip_id` | UUID | PK, FK -> trips(id) | 所屬行程 ID |
+| `user_id` | UUID | PK, FK -> users(id) | 成員用戶 ID |
+| `role` | VARCHAR(20) | DEFAULT 'MEMBER' | 角色：OWNER (擁有者), ADMIN (管理員), MEMBER (成員) |
+| `joined_at` | TIMESTAMP | DEFAULT NOW() | 加入時間 |
+
+### 7.3 activities (活動行程詳細表)
+記錄每一天具體的活動安排。
+
+| 欄位名 | 類型 | 約束 | 說明 |
+| :--- | :--- | :--- | :--- |
+| `id` | UUID | PK, DEFAULT uuid_generate_v4() | 活動唯一識別碼 |
+| `trip_id` | UUID | FK -> trips(id) | 所屬行程 ID |
+| `time` | VARCHAR(20) | NOT NULL | 顯示時間 (如 '09:00', '14:30', 'All Day') |
+| `title` | VARCHAR(100) | NOT NULL | 活動名稱 (如：成田機場接機) |
+| `subtitle` | VARCHAR(255) | | 副標題或簡要備註 |
+| `content` | TEXT | | 詳細描述或筆記內容 |
+| `type` | VARCHAR(30) | NOT NULL | 類型：FLIGHT, HOTEL, FOOD, ATTRACTION, TRANSPORT |
+| `icon_name` | VARCHAR(50) | | Lucide Icon 名稱 |
+| `personal_info` | JSONB | | 個人專屬資訊 (如訂位編號、座位號, JSON 格式) |
+| `sort_order` | INTEGER | DEFAULT 0 | 排序權重 |
+| `location_name` | VARCHAR(255) | | 地點名稱 |
+| `latitude` | DECIMAL(10,8) | | 緯度 |
+| `longitude` | DECIMAL(11,8) | | 經度 |
 
 ---
 
