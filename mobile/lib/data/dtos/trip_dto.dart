@@ -32,14 +32,14 @@ class TripDto {
 
   factory TripDto.fromJson(Map<String, dynamic> json) {
     return TripDto(
-      id: json['id'] as String,
-      title: json['title'] as String,
+      id: (json['id'] ?? '').toString(),
+      title: json['title'] as String? ?? '未命名行程',
       location: json['location'] as String?,
-      startDate: json['startDate'] as String,
-      endDate: json['endDate'] as String,
-      memberCount: json['memberCount'] as int,
+      startDate: json['startDate'] as String? ?? DateTime.now().toIso8601String(),
+      endDate: json['endDate'] as String? ?? DateTime.now().toIso8601String(),
+      memberCount: (json['memberCount'] as num? ?? 1).toInt(),
       iconName: json['icon_name'] as String?,
-      colorValue: json['color_value'] as int?,
+      colorValue: json['color_value'] != null ? (json['color_value'] as num).toInt() : null,
       status: json['status'] as String? ?? 'ACTIVE',
     );
   }

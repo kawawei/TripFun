@@ -95,6 +95,7 @@ class HomePage extends ConsumerWidget {
     required VoidCallback onTap,
   }) {
     final iconData = _getIconData(trip.iconName);
+    // 安全處理顏色數值 / Guarded color parsing
     final primaryColor = trip.colorValue != null ? Color(trip.colorValue!) : Theme.of(context).primaryColor;
     final backgroundColor = primaryColor.withOpacity(0.1);
     
@@ -109,89 +110,91 @@ class HomePage extends ConsumerWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // 縮圖區域 / Thumbnail area
-            Container(
-              width: 100,
-              constraints: const BoxConstraints(minHeight: 120),
-              color: backgroundColor,
-              child: Center(
-                child: Icon(iconData, color: primaryColor, size: 32),
-              ),
-            ),
-            // 內容區域 / Content area
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      trip.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        const Icon(LucideIcons.calendar, size: 14, color: Colors.grey),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            dateRange,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.grey.shade600,
-                                ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(LucideIcons.mapPin, size: 14, color: Colors.grey),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            trip.location ?? '未知地點',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.grey.shade600,
-                                ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Icon(LucideIcons.users, size: 14, color: Theme.of(context).primaryColor),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${trip.memberCount} 位成員',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).primaryColor,
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                      ],
-                    ),
-                  ],
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 縮圖區域 / Thumbnail area
+              Container(
+                width: 100,
+                color: backgroundColor,
+                child: Center(
+                  child: Icon(iconData, color: primaryColor, size: 32),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: Icon(LucideIcons.chevronRight, color: Colors.grey.shade400),
-            ),
-          ],
+              // 內容區域 / Content area
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        trip.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(LucideIcons.calendar, size: 14, color: Colors.grey),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              dateRange,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.grey.shade600,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(LucideIcons.mapPin, size: 14, color: Colors.grey),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              trip.location ?? '未知地點',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.grey.shade600,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Icon(LucideIcons.users, size: 14, color: Theme.of(context).primaryColor),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${trip.memberCount} 位成員',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Theme.of(context).primaryColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // 右側箭頭 / Right arrow
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Icon(LucideIcons.chevronRight, color: Colors.grey.shade400),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -206,6 +209,7 @@ class HomePage extends ConsumerWidget {
       case 'mountain':
         return LucideIcons.mountain;
       case 'plane':
+        // 針對不同版本 LucideIcons 做相容處理 / Fallback for different icon versions
         return LucideIcons.plane;
       default:
         return LucideIcons.map;

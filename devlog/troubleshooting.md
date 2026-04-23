@@ -41,8 +41,12 @@
   - **Dockerfile 修復**：將 `CMD` 改為 `pnpm exec nest start --watch`。
   - **IDE 報錯修復**：配合用戶要求在 host 端執行 `pnpm install` 補全型別宣告。
   - **鏡像與佔位處理**：手動執行 `docker pull busybox:latest` 確保資源就緒，並在 `compose.yaml` 中使用其作為 `chat` 服務的臨時佔位符。
+  - **模組缺失修復 (Module Missing Fix)**：
+    - 問題：容器日誌報錯 `TS2307: Cannot find module '@nestjs/common'...`。
+    - 原因：容器掛載了匿名的 `node_modules` 磁碟卷，但 Host 端的 `pnpm-lock.yaml` 更新後，磁碟卷內容未同步更新，導致連結失效。
+    - 解決：在容器內執行 `docker exec tripfun-backend pnpm install` 強制刷新磁碟卷內容，並重啟容器。
 - **驗證結果**:
-  - 容器顯示 `tripfun-backend Up`。
+  - 容器顯示 `tripfun-backend Up`，日誌顯示 `Nest application successfully started`。
   - API `http://localhost:9001/trips` 成功回傳預設 JSON 數據。
   - 本地 IDE 紅字消失。
 
