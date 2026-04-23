@@ -196,3 +196,20 @@
   - 移除所有全形冒號 `：` 並改為空格。
   - 將 `+` 替換為文字 `加號`。
   - 移除標籤引號內的任何多餘空格。
+
+## 2026-04-24
+
+### Git 操作極其緩慢與 Index 鎖定 (Git Performance & Index Locked)
+- **問題描述 (Issue)**: 
+  - 執行 `git status` 需耗時 10-20 秒，且頻繁出現 `fatal: Unable to create '.git/index.lock': File exists`。
+  - 出現 148 個非預期的 `staged delete` 變更。
+- **原因分析**:
+  - **Index 損壞/殘留**：先前執行 `git rm -r --cached` 時範圍過廣且中途可能因 Bus Error 異常中斷，導致 `.git/index.lock` 未被正確刪除，且 index 紀錄了大量刪除變更。
+  - **監控程序干擾**：MacOS 的 `fsmonitor--daemon` 程序持續持有檔案鎖，導致 git 頻繁重試降低效能。
+- **解決方案 (Solution)**:
+  - **終止監控程序**：執行 `pkill git-fsmonitor` 釋放資源。
+  - **清理鎖文件**：刪除 `.git/index.lock`。
+  - **重建 Index**：刪除損壞的 `.git/index` 並執行 `git read-tree HEAD` 從最新的 commit 重建索引，恢復正確的 staged 狀態。
+- **驗證結果**:
+  - `git status` 恢復至 0.02 秒。
+  - 異常的 staged delete 消失，僅保留正常的開發變更。
