@@ -79,3 +79,7 @@ android/app/src/main/res/values/strings.xml
 docker/*/data
 docker/*/log
 docker-compose.override.yml
+
+# pnpm store
+.pnpm-store/
+backend/.pnpm-store/
