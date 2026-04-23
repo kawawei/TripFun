@@ -12,6 +12,7 @@ import 'accounting/accounting_page.dart';
 import 'world_clock_page.dart';
 import 'translator_page.dart';
 import 'packing_list_page.dart';
+import 'security_credentials_page.dart';
 
 class ToolboxPage extends StatelessWidget {
   const ToolboxPage({super.key});
@@ -107,8 +108,14 @@ class ToolboxPage extends StatelessWidget {
                   subtitle: '證件、機票備份',
                   icon: LucideIcons.shieldCheck,
                   color: Colors.indigo,
-                  onTap: () {},
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SecurityCredentialsPage(),
+                    ),
+                  ),
                 ),
+
                 _buildToolCard(
                   context,
                   title: '世界時區',
