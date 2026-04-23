@@ -380,3 +380,106 @@ async checkPermission(userId: string, tripId: string) { ... }
 ### 13.3 圖片處理邏輯
 *   App 透過 NestJS API 上傳圖片獲取 URL。
 *   Go Service 透過 WebSocket 推送圖片消息（含縮略圖數據與完整 URL）。
+
+---
+
+## 14. 行程與活動管理 API (Trip & Activity API)
+
+### 14.1 行程管理 (Trip Management)
+
+#### [GET] /trips
+*   **說明**: 獲取當前用戶參與的所有行程列表。
+*   **回應 (200)**: `TripEntity[]`
+    ```json
+    [
+      {
+        "id": "uuid",
+        "title": "東京五天四夜櫻花季",
+        "location": "日本, 東京",
+        "startDate": "2026-04-25T00:00:00Z",
+        "endDate": "2026-04-29T00:00:00Z",
+        "memberCount": 2,
+        "iconName": "palmtree",
+        "colorValue": 4278974592,
+        "status": "ACTIVE"
+      }
+    ]
+    ```
+
+#### [GET] /trips/:id
+*   **說明**: 獲取特定行程的詳細元數據。
+*   **參數**: `id` (Trip UUID)
+*   **回應 (200)**: `TripEntity`
+
+#### [POST] /trips
+*   **說明**: 建立一個新行程。
+*   **請求體 (Request Body)**:
+    ```json
+    {
+      "title": "首爾美食行",
+      "location": "韓國, 首爾",
+      "startDate": "2026-05-10T00:00:00Z",
+      "endDate": "2026-05-15T00:00:00Z",
+      "iconName": "flower2",
+      "colorValue": 4278974592
+    }
+    ```
+*   **回應 (201)**: `TripEntity` (含生成的 ID 與 share_token)
+
+#### [PATCH] /trips/:id
+*   **說明**: 修改行程資訊（如更換標題、日期、圖示色值等）。
+*   **參數**: `id` (Trip UUID)
+*   **請求體**: `Partial<TripEntity>`
+*   **回應 (200)**: 更新後的 `TripEntity`
+
+#### [DELETE] /trips/:id
+*   **說明**: 刪除行程（軟刪除或物理刪除，視業務需求而定）。
+*   **參數**: `id` (Trip UUID)
+*   **回應 (204)**: No Content
+
+---
+
+### 14.2 活動管理 (Activity Management)
+
+#### [GET] /trips/:id/activities
+*   **說明**: 獲取特定行程的所有活動清單（通常依 `sort_order` 或 `time` 排序）。
+*   **參數**: `id` (Trip UUID)
+*   **回應 (200)**: `ActivityEntity[]`
+    ```json
+    [
+      {
+        "id": "activity-uuid",
+        "tripId": "trip-uuid",
+        "time": "09:00",
+        "title": "成田機場接機",
+        "type": "TRANSPORT",
+        "iconName": "plane-landing",
+        "personalInfo": { "flightNo": "BR198" }
+      }
+    ]
+    ```
+
+#### [POST] /activities
+*   **說明**: 在行程中新增一項活動。
+*   **請求體**:
+    ```json
+    {
+      "tripId": "uuid",
+      "time": "14:30",
+      "title": "淺草寺參拜",
+      "type": "ATTRACTION",
+      "iconName": "map-pin"
+    }
+    ```
+*   **回應 (201)**: `ActivityEntity`
+
+#### [PATCH] /activities/:id
+*   **說明**: 修改活動詳情。
+*   **參數**: `id` (Activity UUID)
+*   **請求體**: `Partial<ActivityEntity>`
+*   **回應 (200)**: 更新後的 `ActivityEntity`
+
+#### [DELETE] /activities/:id
+*   **說明**: 移除特定活動。
+*   **參數**: `id` (Activity UUID)
+*   **回應 (204)**: No Content
