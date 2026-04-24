@@ -160,6 +160,15 @@ class TtsNotifier extends StateNotifier<TtsState> {
     return text.split(RegExp(r'[。！？\n\r]')).where((s) => s.trim().isNotEmpty).toList();
   }
 
+  Future<void> speak(String text, {String languageCode = 'zh-TW'}) async {
+    if (text.isEmpty) return;
+    await stop();
+    final chunks = _splitText(text);
+    state = state.copyWith(chunks: chunks, currentText: text, currentIndex: 0, isPaused: false);
+    // 這裡可以直接重用撥放邏輯，但為了簡單起見，我們直接執行
+    await _playFromCurrent();
+  }
+
   Future<void> stop() async {
     try {
       await _flutterTts.stop();
