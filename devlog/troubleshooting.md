@@ -494,3 +494,24 @@
 - 有資料時，顯示分類清單。
 
 紀錄時間：04:34
+
+---
+
+### 行李清單為空：後端數據過濾邏輯錯誤 (Packing List Empty: Backend Data Filtering Logic Error)
+2026-04-25 05:04 — 行李清單無法顯示預設項目
+
+問題描述
+- 場景：已手動向測試服務器數據庫新增了 8 個預設分類與項目，但前端頁面仍顯示「清單是空的」。
+
+原因分析
+- `PackingService.getPackingList` 原本的邏輯在傳入 `tripId` 時，僅會查詢 `trip_id = :tripId` 的項目。
+- 因為預設項目（如護照、手機充電線等）的 `trip_id` 為 `null`（代表全域預設），因此被排除在查詢結果外。
+
+解決方案
+- 修改 `backend/src/modules/trips/services/packing.service.ts` 中的查詢邏輯。
+- 使用 `createQueryBuilder` 改寫查詢條件，改為 `where('item.trip_id IS NULL').orWhere('item.trip_id = :tripId')`，確保全域預設項目也能與行程專屬項目同時呈現。
+
+驗證結果
+- 重新部署後端至測試服務器，前端頁面成功顯示 8 個預設分類與對應項目。
+
+紀錄時間：05:04
