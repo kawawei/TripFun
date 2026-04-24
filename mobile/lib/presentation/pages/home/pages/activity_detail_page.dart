@@ -142,6 +142,24 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
                 ),
               ),
             ),
+            
+            // 左右切換箭頭 (Web 友善) / Left-Right Navigation Arrows
+            if (hasImages && images.length > 1)
+              Center(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Opacity(
+                      opacity: _currentPage > 0 ? 1.0 : 0.0,
+                      child: _buildImageNavArrow(LucideIcons.chevronLeft, false),
+                    ),
+                    Opacity(
+                      opacity: _currentPage < images.length - 1 ? 1.0 : 0.0,
+                      child: _buildImageNavArrow(LucideIcons.chevronRight, true),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
         title: Text(widget.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
@@ -170,18 +188,45 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(
             images.length,
-            (index) => AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              width: _currentPage == index ? 20 : 8,
-              height: 8,
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(4),
-                color: _currentPage == index ? Theme.of(context).primaryColor : Colors.grey.shade300,
+            (index) => GestureDetector(
+              onTap: () {
+                _pageController.animateToPage(
+                  index,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                );
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                width: _currentPage == index ? 20 : 8,
+                height: 8,
+                margin: const EdgeInsets.symmetric(horizontal: 6),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(4),
+                  color: _currentPage == index ? Theme.of(context).primaryColor : Colors.grey.shade300,
+                ),
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildImageNavArrow(IconData icon, bool isNext) {
+    return GestureDetector(
+      onTap: () {
+        if (isNext && _currentPage < (widget.imageUrls?.length ?? 1) - 1) {
+          _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+        } else if (!isNext && _currentPage > 0) {
+          _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 8),
+        padding: const EdgeInsets.all(8),
+        decoration: const BoxDecoration(color: Colors.black38, shape: BoxShape.circle),
+        child: Icon(icon, color: Colors.white, size: 24),
       ),
     );
   }
