@@ -5,6 +5,9 @@
  * @description_en Displays detailed attraction info, images, and nearby info
  */
 
+import 'dart:async';
+import 'dart:js' as js; // 用於 Web 原生調用 / For native JS interop
+import 'package:flutter/foundation.dart'; // 用於 kIsWeb 判斷
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -36,7 +39,7 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> with WidgetsBin
   final PageController _pageController = PageController();
   
   // 語音組件 / TTS Components
-  final FlutterTts _flutterTts = FlutterTts();
+  FlutterTts? _flutterTts;
   bool _isPlaying = false;
   String? _currentVoiceGender; // 'male' or 'female'
 
@@ -44,71 +47,115 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> with WidgetsBin
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _initTts();
+    if (!kIsWeb) {
+      _initTts();
+    }
   }
 
   void _initTts() async {
-    await _flutterTts.setLanguage("zh-TW");
-    await _flutterTts.setSpeechRate(0.5);
-    await _flutterTts.setVolume(1.0);
-    await _flutterTts.setPitch(1.0);
+    try {
+      _flutterTts ??= FlutterTts();
+      await _flutterTts!.setLanguage("zh-TW");
+      await _flutterTts!.setSpeechRate(0.5);
+      await _flutterTts!.setVolume(1.0);
+      await _flutterTts!.setPitch(1.0);
 
-    _flutterTts.setCompletionHandler(() {
-      if (mounted) setState(() => _isPlaying = false);
-    });
+      _flutterTts!.setCompletionHandler(() {
+        if (mounted) setState(() => _isPlaying = false);
+      });
 
-    _flutterTts.setCancelHandler(() {
-      if (mounted) setState(() => _isPlaying = false);
-    });
+      _flutterTts!.setCancelHandler(() {
+        if (mounted) setState(() => _isPlaying = false);
+      });
+    } catch (e) {
+      debugPrint("TTS Init Error: $e");
+    }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // 當 App 進入背景或暫停時，停止語音 / Stop TTS when app goes to background
     if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
-      _flutterTts.stop();
-      if (mounted) setState(() => _isPlaying = false);
+      _stopTts();
     }
+  }
+
+  void _stopTts() {
+    try {
+      if (kIsWeb) {
+        js.context.callMethod('eval', ['window.speechSynthesis.cancel()']);
+      } else {
+        _flutterTts?.stop();
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _isPlaying = false);
   }
 
   Future<void> _toggleSpeak(String gender) async {
     if (widget.content == null || widget.content!.isEmpty) return;
 
-    try {
-      // 如果點擊目前播放中的聲音，則停止 / Stop if clicking same gender while playing
-      if (_isPlaying && _currentVoiceGender == gender) {
-        await _flutterTts.stop();
+    // 處理朗讀文字：避開訂單資訊，鎖定精彩亮點
+    String textToSpeak = widget.content!;
+    if (textToSpeak.contains("--- 🌟 飯店亮點 (Highlights) ---")) {
+      textToSpeak = textToSpeak.split("--- 🌟 飯店亮點 (Highlights) ---").last;
+    }
+    // 清除特殊符號
+    textToSpeak = textToSpeak.replaceAll('"', '').replaceAll("'", "").replaceAll('\n', ' ');
+
+    if (_isPlaying && _currentVoiceGender == gender) {
+      _stopTts();
+      return;
+    }
+
+    _stopTts(); // 先停止
+
+    setState(() {
+      _isPlaying = true;
+      _currentVoiceGender = gender;
+    });
+
+    if (kIsWeb) {
+      // --- Web 核心備援方案：直接調用原生 JS ---
+      try {
+        final double pitch = (gender == 'female' ? 1.4 : 0.8);
+        final double rate = (gender == 'female' ? 1.1 : 0.9);
+        
+        js.context.callMethod('eval', ["""
+          (function() {
+            window.speechSynthesis.cancel();
+            var msg = new SpeechSynthesisUtterance();
+            msg.text = '$textToSpeak';
+            msg.lang = 'zh-TW';
+            msg.pitch = $pitch;
+            msg.rate = $rate;
+            msg.onend = function(event) {
+              // 此部分無法直接回傳 Dart，故配合 Dart 的 Timer
+            };
+            window.speechSynthesis.speak(msg);
+          })();
+        """]);
+
+        // Web 端手動設定一個估計的結束時間或讓使用者手動點擊停止
+        // 為簡單起見，我們先假設播放中
+      } catch (e) {
+        debugPrint("Web Native TTS Error: $e");
         setState(() => _isPlaying = false);
-        return;
       }
-
-      // 先停止所有聲音，並加入安全性檢查 / Stop with safety check
-      await _flutterTts.stop();
-
-      // 處理朗讀文字：避開訂單資訊，鎖定精彩亮點 / Filter text to speak
-      String textToSpeak = widget.content!;
-      if (textToSpeak.contains("--- 🌟 飯店亮點 (Highlights) ---")) {
-        textToSpeak = textToSpeak.split("--- 🌟 飯店亮點 (Highlights) ---").last;
+    } else {
+      // --- 非 Web 環境：使用插件 ---
+      try {
+        _initTts();
+        if (gender == 'female') {
+          await _flutterTts!.setPitch(1.2); 
+          await _flutterTts!.setSpeechRate(0.52);
+        } else {
+          await _flutterTts!.setPitch(0.85); 
+          await _flutterTts!.setSpeechRate(0.48);
+        }
+        await _flutterTts!.speak(textToSpeak);
+      } catch (e) {
+        debugPrint("Plugin TTS Error: $e");
+        setState(() => _isPlaying = false);
       }
-
-      // 設定音色 / Set Tone/Pitch
-      if (gender == 'female') {
-        await _flutterTts.setPitch(1.2); 
-        await _flutterTts.setSpeechRate(0.52);
-      } else {
-        await _flutterTts.setPitch(0.85); 
-        await _flutterTts.setSpeechRate(0.48);
-      }
-
-      setState(() {
-        _isPlaying = true;
-        _currentVoiceGender = gender;
-      });
-
-      await _flutterTts.speak(textToSpeak);
-    } catch (e) {
-      debugPrint("TTS Error: $e");
-      if (mounted) setState(() => _isPlaying = false);
     }
   }
 
