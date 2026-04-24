@@ -24,10 +24,13 @@ final dioProvider = Provider<Dio>((ref) {
     ),
   );
 
-  // 可以添加日誌攔截器 / Add log interceptor
+  // 在輪詢機制下，為了避免終端機被洗版，關閉 requestBody 與 responseBody 記錄
+  // 或是直接移除 LogInterceptor
   dio.interceptors.add(LogInterceptor(
-    requestBody: true,
-    responseBody: true,
+    requestBody: false,
+    responseBody: false,
+    requestHeader: false,
+    responseHeader: false,
   ));
 
   return dio;
