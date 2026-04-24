@@ -27,6 +27,8 @@ services:
       - "${BACKEND_HOST_PORT:-8087}:3000"
     env_file:
       - ../../env/prod/.env
+    volumes:
+      - tripfun-backend-uploads:/app/uploads
     environment:
       - NODE_ENV=production
       - DB_HOST=tripfun-db
@@ -93,4 +95,6 @@ networks:
 
 volumes:
   tripfun-db-data:
+    driver: local
+  tripfun-backend-uploads:
     driver: local
