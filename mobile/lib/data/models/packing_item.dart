@@ -12,6 +12,7 @@ class PackingItem {
   final String category;
   final bool isCustom;
   final String? tripId;
+  final int sortOrder;
 
   PackingItem({
     required this.id,
@@ -20,6 +21,7 @@ class PackingItem {
     required this.category,
     this.isCustom = false,
     this.tripId,
+    this.sortOrder = 0,
   });
 
   factory PackingItem.fromJson(Map<String, dynamic> json) {
@@ -30,6 +32,7 @@ class PackingItem {
       category: json['category'] as String,
       isCustom: json['is_custom'] as bool? ?? false,
       tripId: json['trip_id'] as String?,
+      sortOrder: json['sort_order'] as int? ?? 0,
     );
   }
 
@@ -41,6 +44,7 @@ class PackingItem {
       'category': category,
       'is_custom': isCustom,
       'trip_id': tripId,
+      'sort_order': sortOrder,
     };
   }
 
@@ -51,6 +55,7 @@ class PackingItem {
     String? category,
     bool? isCustom,
     String? tripId,
+    int? sortOrder,
   }) {
     return PackingItem(
       id: id ?? this.id,
@@ -59,6 +64,7 @@ class PackingItem {
       category: category ?? this.category,
       isCustom: isCustom ?? this.isCustom,
       tripId: tripId ?? this.tripId,
+      sortOrder: sortOrder ?? this.sortOrder,
     );
   }
 }

@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../widgets/create_trip_modal.dart';
 import '../../../domain/entities/trip_entity.dart';
+import '../../providers/auth_provider.dart';
 import 'provider/home_provider.dart';
 import 'pages/trip_detail_page.dart';
 
@@ -26,12 +27,11 @@ class HomePage extends ConsumerWidget {
         title: const Text('我的行程'),
         actions: [
           IconButton(
-            icon: const Icon(LucideIcons.search),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(LucideIcons.settings),
-            onPressed: () {},
+            icon: const Icon(LucideIcons.arrowLeft),
+            tooltip: '返回選擇使用者',
+            onPressed: () {
+              ref.read(authProvider.notifier).logout();
+            },
           ),
         ],
       ),

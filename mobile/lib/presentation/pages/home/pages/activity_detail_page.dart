@@ -6,7 +6,6 @@
  */
 
 import 'dart:async';
-import 'dart:js' as js; // 用於 Web 原生調用 / For native JS interop
 import 'package:flutter/foundation.dart'; // 用於 kIsWeb 判斷
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';

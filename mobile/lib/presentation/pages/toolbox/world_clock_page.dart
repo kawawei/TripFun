@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:intl/intl.dart';
-import 'package:flutter_native_timezone/flutter_native_timezone.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 
 class WorldClockPage extends StatefulWidget {
   const WorldClockPage({super.key});
@@ -50,7 +50,8 @@ class _WorldClockPageState extends State<WorldClockPage> {
 
   Future<void> _initLocalTimeZone() async {
     try {
-      final String timeZoneName = await FlutterNativeTimezone.getLocalTimezone();
+      final tzInfo = await FlutterTimezone.getLocalTimezone();
+      final String timeZoneName = tzInfo.identifier;
       setState(() {
         _localTimeZone = timeZoneName;
         _isInitialized = true;

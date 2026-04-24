@@ -515,3 +515,29 @@
 - 重新部署後端至測試服務器，前端頁面成功顯示 8 個預設分類與對應項目。
 
 紀錄時間：05:04
+
+### Flutter Android 打包環境報錯 (Android Packaging Compilation Error)
+- **問題描述 (Issue)**:
+  - 執行 `flutter build apk` 時，出現多個錯誤：
+    1. `flutter_native_timezone` 出現 `Namespace not specified` 錯誤。
+    2. `activity_detail_page.dart` 中因為匯入了 Web 專用的 `dart:js` 導致 Android 編譯錯誤：`Target kernel_snapshot_program failed`。
+    3. 修正上述後，`flutter_native_timezone` 再次出現 Kotlin 與 Java 版本的 `Inconsistent JVM Target Compatibility` 錯誤，以及 `Unresolved reference 'Registrar'` 的棄用 API 報錯。
+- **原因分析**:
+  - `flutter_native_timezone` 套件已經過於老舊，缺乏 AGP 8 命名空間與現代 Kotlin 編譯相容性，且呼叫了被 Flutter 廢棄的 v1 Embedding API。
+  - `dart:js` 僅適用於 Flutter Web，不可在未進行條件編譯的情況下直接應用於全平台程式碼。
+- **解決方案 (Solution)**:
+  - 將過期的 `flutter_native_timezone` 徹底移除，更換為現代化的 `flutter_timezone` 套件，並更新 `world_clock_page.dart` 的呼叫方法為 `FlutterTimezone.getLocalTimezone()`。
+  - 從 `activity_detail_page.dart` 中移除未使用到的 `import 'dart:js' as js;` 引用。
+- **驗證結果**:
+  - `flutter build apk --release` 成功通過所有編譯，並順利產出 Android APK。
+
+### Flutter Web 崩潰：移除舊依賴後的快取殘留 (Web Plugin Registrant Cache Error)
+- **問題描述 (Issue)**:
+  - 移除過期的 `flutter_native_timezone` 套件後，原本仍在背景執行的 `flutter run` (Web) 進行 Hot Reload 時崩潰，並報錯 `Error: Couldn't resolve the package 'flutter_native_timezone' in ...web_plugin_registrant.dart`。
+- **原因分析**:
+  - Flutter 在 Web 模式下會自動生成 `web_plugin_registrant.dart` 檔案。當我們直接在 `pubspec.yaml` 刪除依賴時，舊有的 Hot Reload state 和快取並不會自動將此插件從 registrant 中注銷，導致 Dart 虛擬機找不到該套件而編譯中斷。
+- **解決方案 (Solution)**:
+  - 在終端機 (dartvm) 點按 `q` 完整結束當前的 `flutter run` 行程。
+  - 重新執行 `flutter run -d chrome --web-port 3000`，讓 Flutter 重新產生乾淨且正確的 plugin registrant 即可恢復正常。
+
+紀錄時間：05:41

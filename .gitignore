@@ -83,3 +83,9 @@ docker-compose.override.yml
 # pnpm store
 .pnpm-store/
 backend/.pnpm-store/
+
+# Generated Artifacts
+apk/
+
+# Image Resources
+圖片/

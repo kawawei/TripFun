@@ -45,13 +45,13 @@ dependencies:
   fl_chart: ^1.2.0
   uuid: ^4.5.3
   timezone: ^0.11.0
-  flutter_native_timezone: ^2.0.0
   translator: ^1.0.4+1
   flutter_tts: ^4.2.5
   cached_network_image: ^3.4.1
   image_picker: ^1.2.1
   flutter_image_compress: ^2.4.0
   path_provider: ^2.1.5
+  flutter_timezone: ^5.0.2
 
 dev_dependencies:
   flutter_test:
@@ -63,6 +63,7 @@ dev_dependencies:
   freezed_annotation: ^2.4.1
   json_serializable: ^6.7.1
   json_annotation: ^4.8.1
+  flutter_launcher_icons: ^0.14.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -105,3 +106,10 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "../圖片/軟體圖標/android_square.png"
+  adaptive_icon_background: "#06b6d4"
+  adaptive_icon_foreground: "../圖片/軟體圖標/android_square.png"
