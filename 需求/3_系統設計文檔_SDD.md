@@ -572,4 +572,107 @@ docker exec -i tripfun-db psql -U tripfun_user -d tripfun_db -c "UPDATE trip_mem
 ```bash
 # 清空所有業務數據 (保留用戶表)
 docker exec -it tripfun-db psql -U tripfun_user -d tripfun_db -c "TRUNCATE table activities, expenses, trip_members, trips CASCADE;"
+
+---
+
+## 16. 行李清單模組 (Packing List Module)
+
+### 16.1 模組架構
+- **PackingItem**: 存儲行李清單項目基礎資訊。`trip_id` 為 NULL 表示系統全域預設，否則為該行程專屬自定義。
+- **UserPackingStatus**: 記錄使用者、項目與勾選狀態的映射。確保多用戶協作時，清單清單相同但勾選進度獨立（Personalized Check Status）。
+
+### 16.2 API 接口詳細規範
+
+#### 16.2.1 獲取行李清單
+- **Endpoint**: `GET /trips/packing`
+- **Query Params**:
+  - `userId`: (必填) 指定查詢的使用者 ID
+  - `tripId`: (選填) 關聯的行程 ID
+- **Curl 範例**:
+  ```bash
+  curl -X GET "http://43.103.3.57:8087/trips/packing?userId=u1&tripId=44444444-4444-4444-4444-444444444444"
+  ```
+
+#### 16.2.2 切換勾選狀態
+- **Endpoint**: `PATCH /trips/packing/items/:id/status`
+- **Request Body**:
+  ```json
+  {
+    "userId": "string",
+    "isChecked": boolean,
+    "tripId": "string (optional)"
+  }
+  ```
+- **Curl 範例**:
+  ```bash
+  curl -X PATCH http://43.103.3.57:8087/trips/packing/items/ITEM_UUID/status \
+       -H "Content-Type: application/json" \
+       -d '{"userId": "u1", "isChecked": true, "tripId": "44444444-4444-..."}'
+  ```
+
+#### 16.2.3 新增自定義項目
+- **Endpoint**: `POST /trips/packing/items`
+- **Request Body**:
+  ```json
+  {
+    "title": "string",
+    "category": "string",
+    "is_custom": true,
+    "trip_id": "string",
+    "created_by": "string"
+  }
+  ```
+- **Curl 範例**:
+  ```bash
+  curl -X POST http://43.103.3.57:8087/trips/packing/items \
+       -H "Content-Type: application/json" \
+       -d '{"title": "備用電池", "category": "電子產品與配件", "is_custom": true, "trip_id": "4444-...", "created_by": "u1"}'
+  ```
+
+#### 16.2.4 刪除自定義項目
+- **Endpoint**: `DELETE /trips/packing/items/:id`
+- **Curl 範例**:
+  ```bash
+  curl -X DELETE http://43.103.3.57:8087/trips/packing/items/ITEM_UUID
+  ```
+
 ```
+
+---
+
+## 16. 行李清單模組 (Packing List Module)
+
+### 16.1 模組架構
+- **PackingItem**: 存儲所有行李項目。 為 NULL 表示系統預設，否則為行程自定義。
+- **UserPackingStatus**: 記錄特定使用者與項目的勾選關係。支援「同一清單、個人狀態」之功能。
+
+### 16.2 API 接口規範
+
+#### [GET] /trips/packing
+- **說明**: 獲取當前用戶在特定行程中的行李清單。
+- **參數**:  (必填),  (選填)
+- **CURL 指令**:
+  ```bash
+  curl -X GET "http://43.103.3.57:8087/trips/packing?userId=u1&tripId=44444444-4444-4444-4444-444444444444"
+  ```
+
+#### [PATCH] /trips/packing/items/:id/status
+- **說明**: 切換行李項目的勾選狀態。
+- **請求體**: `{"userId": "string", "isChecked": boolean, "tripId": "string"}`
+- **CURL 指令**:
+  ```bash
+  curl -X PATCH http://43.103.3.57:8087/trips/packing/items/ITEM_UUID/status \
+       -H "Content-Type: application/json" \
+       -d '{"userId": "u1", "isChecked": true, "tripId": "44444444-4444-4444-4444-444444444444"}'
+  ```
+
+#### [POST] /trips/packing/items
+- **說明**: 新增自定義行李項目。
+- **請求體**: `{"title": "string", "category": "string", "tripId": "string", "userId": "string"}`
+- **CURL 指令**:
+  ```bash
+  curl -X POST http://43.103.3.57:8087/trips/packing/items \
+       -H "Content-Type: application/json" \
+       -d '{"title": "備用藥品", "category": "常備藥品與防疫", "is_custom": true, "trip_id": "4444-...", "created_by": "u1"}'
+  ```
+

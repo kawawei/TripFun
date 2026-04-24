@@ -21,7 +21,12 @@ export class PackingService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    await this.initializeDefaultItems();
+    // 延遲執行初始化，確保資料庫表格已由 TypeORM 同步完成 / Delay initialization to ensure DB tables are synced
+    setTimeout(() => {
+      this.initializeDefaultItems().catch(err => {
+        console.error('Failed to initialize default packing items:', err.message);
+      });
+    }, 5000);
   }
 
   /**
