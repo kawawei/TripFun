@@ -355,3 +355,17 @@
   - Hot Reload 後點擊圖片即順利進入全螢幕燈箱模式。
 
 紀錄時間：17:29
+
+### Flutter Web 字型缺失警告 (Missing Noto Fonts for Special Symbols)
+- **問題描述 (Issue)**: 
+  - 在更新行程式簡介後，Web 終端機頻繁出現警告：`Could not find a set of Noto fonts to display all missing characters. Please add a font asset for the missing characters.`。
+  - 特殊符號（如 `🏖️`、`▸`、`✦`）在部分設備上可能呈現為空白或出現亂碼框體 (Tofu)。
+- **原因分析**:
+  - Flutter Web 的 CanvasKit/HTML 渲染器在遭遇未能映射到預設字型的特殊全形符號或 Emoji 時，會自動嘗試向 Google Fonts 拉取 `Noto Sans` 系列字型作為 Fallback，但若找不到與該 Emoji 精確匹配的版本即會拋出此警告。
+- **解決方案 (Solution)**:
+  - 最快速且確保高度相容性的做法是：**移除資料庫文字內的罕見符號與 Emoji**，將其降級為標準 ASCII 符號（例如使用 `-` 取代 `▸` 或 `✦`）。
+  - 已透過 API 針對 `關島 (GUM) 轉機` 節點的內容執行 Sanitization，去除會觸發警告之特殊字元。
+- **驗證結果**:
+  - 重整網頁後，資料庫成功派發乾淨的純文字內容，Web Console 報錯即刻消失，確保文字在跨平台渲染的一致性。
+
+紀錄時間：01:37
