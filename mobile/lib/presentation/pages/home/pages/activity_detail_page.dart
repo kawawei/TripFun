@@ -56,11 +56,8 @@ class _ActivityDetailPageState extends ConsumerState<ActivityDetailPage> with Wi
   Future<void> _toggleSpeak(String gender) async {
     if (widget.content == null || widget.content!.isEmpty) return;
 
-    // 處理朗讀文字：避開訂單資訊，鎖定精彩亮點
+    // 朗讀所有文字內容 / Read the entire detailed description
     String textToSpeak = widget.content!;
-    if (textToSpeak.contains("--- 🌟 飯店亮點 (Highlights) ---")) {
-      textToSpeak = textToSpeak.split("--- 🌟 飯店亮點 (Highlights) ---").last;
-    }
     
     // 使用全域 Provider 進行朗讀 / Use global provider
     await ref.read(ttsProvider.notifier).speak(textToSpeak, gender: gender);
