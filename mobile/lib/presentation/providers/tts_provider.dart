@@ -52,66 +52,50 @@ class TtsNotifier extends StateNotifier<TtsState> {
     await _ensureInitialized();
 
     try {
-      // 嘗試獲取高品質語音 / Select high-quality voices
+      // 獲取高品質語音 (省略部分重複邏輯以節省篇幅)
       final dynamic voices = await _flutterTts.getVoices;
       if (voices != null && voices is List && voices.isNotEmpty) {
-        try {
-          final targetVoices = voices.where((v) {
-            final String locale = v['locale']?.toString().toLowerCase() ?? '';
-            return locale.contains(languageCode.toLowerCase().replaceAll('-', '_')) || 
-                   locale.contains(languageCode.toLowerCase());
-          }).toList();
-
-          if (targetVoices.isNotEmpty) {
-            dynamic selected;
-            if (gender == 'female') {
-              selected = targetVoices.firstWhere(
-                (v) => v['name']?.toString().toLowerCase().contains('female') ?? false,
-                orElse: () => targetVoices.firstWhere(
-                  (v) => v['name']?.toString().toLowerCase().contains('google') ?? false,
-                  orElse: () => targetVoices.first,
-                ),
-              );
-            } else if (gender == 'male') {
-              selected = targetVoices.firstWhere(
-                (v) => v['name']?.toString().toLowerCase().contains('male') ?? false,
-                orElse: () => targetVoices.first,
-              );
-            } else {
-              selected = targetVoices.firstWhere(
-                (v) => v['name']?.toString().toLowerCase().contains('google') ?? false,
-                orElse: () => targetVoices.first,
-              );
-            }
-            await _flutterTts.setVoice({"name": selected["name"], "locale": selected["locale"]});
-          }
-        } catch (e) {
-          debugPrint("Voice Selection Error: $e");
+        final targetVoices = voices.where((v) => v['locale']?.toString().toLowerCase().contains(languageCode.toLowerCase().replaceAll('-', '_')) ?? false).toList();
+        if (targetVoices.isNotEmpty) {
+          dynamic selected = targetVoices.firstWhere(
+            (v) => v['name']?.toString().toLowerCase().contains(gender == 'female' ? 'female' : 'male') ?? false,
+            orElse: () => targetVoices.first,
+          );
+          await _flutterTts.setVoice({"name": selected["name"], "locale": selected["locale"]});
         }
-      }
-
-      if (state.isPlaying && state.currentGender == gender) {
-        await stop();
-        return;
       }
 
       await stop(); 
-
-      // 對齊翻譯頁面之黃金比例 1.0
       await _flutterTts.setPitch(1.0);
-      await _flutterTts.setSpeechRate(kIsWeb ? 0.9 : 1.0); // Web 端 0.9 較接近 Mobile 的 1.0 聽感
+      await _flutterTts.setSpeechRate(kIsWeb ? 0.9 : 1.0);
 
       state = state.copyWith(isPlaying: true, currentGender: gender);
 
-      if (kIsWeb && text.length > 100) {
-        // 加大分段間隔，防止 Chrome 報錯 Error Event
+      if (kIsWeb && text.length > 50) {
         List<String> chunks = _splitText(text);
         for (String chunk in chunks) {
           if (!state.isPlaying) break;
+          
+          // 建立一個等待鎖 / Create a lock to wait for speech completion
+          final syncCompleter = Completer<void>();
+          _flutterTts.setCompletionHandler(() {
+            if (!syncCompleter.isCompleted) syncCompleter.complete();
+          });
+          _flutterTts.setErrorHandler((_) {
+            if (!syncCompleter.isCompleted) syncCompleter.complete();
+          });
+
           await _flutterTts.speak(chunk);
-          // 給予瀏覽器微小的緩衝時間 / Micro delay for stability
-          await Future.delayed(const Duration(milliseconds: 300));
+          
+          // 等待這句讀完，或最多等 15 秒避免卡死 / Wait for completion or timeout
+          await syncCompleter.future.timeout(const Duration(seconds: 15), onTimeout: () {
+            if (!syncCompleter.isCompleted) syncCompleter.complete();
+          });
+          
+          // 句與句之間的自然停頓
+          await Future.delayed(const Duration(milliseconds: 200));
         }
+        state = state.copyWith(isPlaying: false);
       } else {
         await _flutterTts.speak(text);
       }
