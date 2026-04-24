@@ -8,20 +8,69 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:intl/intl.dart';
 import '../../../../domain/entities/trip_entity.dart';
 import '../../../../domain/entities/activity_entity.dart';
 import '../provider/activity_provider.dart';
 import 'activity_detail_page.dart';
 
-class TripDetailPage extends ConsumerWidget {
+class TripDetailPage extends ConsumerStatefulWidget {
   final TripEntity trip;
 
   const TripDetailPage({super.key, required this.trip});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final activitiesAsync = ref.watch(activitiesProvider(trip.id));
-    final primaryColor = trip.colorValue != null ? Color(trip.colorValue!) : Theme.of(context).primaryColor;
+  ConsumerState<TripDetailPage> createState() => _TripDetailPageState();
+}
+
+class _TripDetailPageState extends ConsumerState<TripDetailPage> {
+  late List<DateTime> _tripDays;
+  late DateTime _selectedDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _generateTripDays();
+    _selectedDate = _tripDays.first;
+  }
+
+  void _generateTripDays() {
+    _tripDays = [];
+    final start = DateTime(widget.trip.startDate.year, widget.trip.startDate.month, widget.trip.startDate.day);
+    final end = DateTime(widget.trip.endDate.year, widget.trip.endDate.month, widget.trip.endDate.day);
+    
+    DateTime current = start;
+    while (!current.isAfter(end)) {
+      _tripDays.add(current);
+      current = current.add(const Duration(days: 1));
+    }
+    if (_tripDays.isEmpty) {
+      _tripDays.add(start);
+    }
+  }
+
+  List<ActivityEntity> _filterActivities(List<ActivityEntity> allActivities) {
+    final selectedDateStr1 = DateFormat('M/d').format(_selectedDate);
+    final selectedDateStr2 = DateFormat('MM/dd').format(_selectedDate);
+    
+    return allActivities.where((a) {
+      if (a.time.contains(selectedDateStr1) || a.time.contains(selectedDateStr2)) {
+        return true;
+      }
+      
+      final hasAnyDate = RegExp(r'\(\d{1,2}/\d{1,2}\)').hasMatch(a.time);
+      if (!hasAnyDate) {
+        return _selectedDate.isAtSameMomentAs(_tripDays.first);
+      }
+      
+      return false;
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final activitiesAsync = ref.watch(activitiesProvider(widget.trip.id));
+    final primaryColor = widget.trip.colorValue != null ? Color(widget.trip.colorValue!) : Theme.of(context).primaryColor;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -30,25 +79,33 @@ class TripDetailPage extends ConsumerWidget {
           _buildSliverAppBar(context, primaryColor),
           _buildDaySelector(primaryColor),
           activitiesAsync.when(
-            data: (activities) => activities.isEmpty
-                ? const SliverFillRemaining(
-                    child: Center(child: Text('目前沒有活動安排')),
-                  )
-                : SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final activity = activities[index];
-                        return _buildTimelineActivity(
-                          context,
-                          activity: activity,
-                          primaryColor: primaryColor,
-                          isFirst: index == 0,
-                          isLast: index == activities.length - 1,
-                        );
-                      },
-                      childCount: activities.length,
-                    ),
-                  ),
+            data: (allActivities) {
+              final activities = _filterActivities(allActivities);
+              return activities.isEmpty
+                  ? SliverFillRemaining(
+                      child: Center(
+                        child: Text(
+                          '${DateFormat('M/d').format(_selectedDate)} 沒有活動安排',
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                      ),
+                    )
+                  : SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final activity = activities[index];
+                          return _buildTimelineActivity(
+                            context,
+                            activity: activity,
+                            primaryColor: primaryColor,
+                            isFirst: index == 0,
+                            isLast: index == activities.length - 1,
+                          );
+                        },
+                        childCount: activities.length,
+                      ),
+                    );
+            },
             loading: () => const SliverFillRemaining(
               child: Center(child: CircularProgressIndicator()),
             ),
@@ -61,7 +118,7 @@ class TripDetailPage extends ConsumerWidget {
                     const SizedBox(height: 16),
                     Text('加載活動失敗: $err'),
                     TextButton(
-                      onPressed: () => ref.refresh(activitiesProvider(trip.id)),
+                      onPressed: () => ref.refresh(activitiesProvider(widget.trip.id)),
                       child: const Text('重試'),
                     ),
                   ],
@@ -89,7 +146,7 @@ class TripDetailPage extends ConsumerWidget {
       iconTheme: const IconThemeData(color: Colors.white),
       flexibleSpace: FlexibleSpaceBar(
         title: Text(
-          trip.title,
+          widget.trip.title,
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
         ),
         background: Stack(
@@ -106,7 +163,7 @@ class TripDetailPage extends ConsumerWidget {
                   ],
                 ),
               ),
-              child: Icon(_getIconData(trip.iconName), size: 80, color: Colors.white24),
+              child: Icon(_getIconData(widget.trip.iconName), size: 80, color: Colors.white24),
             ),
             const DecoratedBox(
               decoration: BoxDecoration(
@@ -128,7 +185,7 @@ class TripDetailPage extends ConsumerWidget {
   }
 
   Widget _buildDaySelector(Color primaryColor) {
-    // 這裡暫時手動生成日期範圍，實際可從 trip.startDate/endDate 計算 / Currently manual, can be calculated from startDate/endDate
+    const weekdays = ['一', '二', '三', '四', '五', '六', '日'];
     return SliverToBoxAdapter(
       child: Container(
         height: 80,
@@ -137,16 +194,25 @@ class TripDetailPage extends ConsumerWidget {
           color: Colors.white,
           border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
         ),
-        child: ListView(
+        child: ListView.builder(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          children: [
-            _buildDayItem('4/25', '六', true, primaryColor),
-            _buildDayItem('4/26', '日', false, primaryColor),
-            _buildDayItem('4/27', '一', false, primaryColor),
-            _buildDayItem('4/28', '二', false, primaryColor),
-            _buildDayItem('4/29', '三', false, primaryColor),
-          ],
+          itemCount: _tripDays.length,
+          itemBuilder: (context, index) {
+            final date = _tripDays[index];
+            final dateStr = DateFormat('M/d').format(date);
+            final dayStr = weekdays[date.weekday - 1];
+            final isSelected = date.isAtSameMomentAs(_selectedDate);
+            
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedDate = date;
+                });
+              },
+              child: _buildDayItem(dateStr, dayStr, isSelected, primaryColor),
+            );
+          },
         ),
       ),
     );
