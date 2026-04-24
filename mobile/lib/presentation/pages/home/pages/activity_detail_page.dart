@@ -8,15 +8,21 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
+import 'package:flutter/material.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
 class ActivityDetailPage extends StatelessWidget {
   final String title;
   final String category;
+  final String? imageUrl;
   final Map<String, String>? personalInfo;
 
   const ActivityDetailPage({
     super.key,
     required this.title,
     required this.category,
+    this.imageUrl,
     this.personalInfo,
   });
 
@@ -58,17 +64,21 @@ class ActivityDetailPage extends StatelessWidget {
     return SliverAppBar(
       expandedHeight: 300,
       pinned: true,
+      iconTheme: const IconThemeData(color: Colors.white),
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           fit: StackFit.expand,
           children: [
-            // 模擬圖片 / Mock Image
-            Container(
-              color: Colors.grey.shade200,
-              child: Center(
-                child: Icon(LucideIcons.camera, size: 64, color: Colors.grey.shade400),
-              ),
-            ),
+            // 背景圖片 / Background Image
+            if (imageUrl != null && imageUrl!.startsWith('http'))
+              CachedNetworkImage(
+                imageUrl: imageUrl!,
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Container(color: Colors.grey.shade200),
+                errorWidget: (context, url, error) => _buildPlaceholder(),
+              )
+            else
+              _buildPlaceholder(),
             // 漸層遮罩 / Gradient overlay
             const DecoratedBox(
               decoration: BoxDecoration(
@@ -86,20 +96,30 @@ class ActivityDetailPage extends StatelessWidget {
     );
   }
 
+  Widget _buildPlaceholder() {
+    return Container(
+      color: Colors.grey.shade200,
+      child: Center(
+        child: Icon(LucideIcons.camera, size: 64, color: Colors.grey.shade400),
+      ),
+    );
+  }
+
   Widget _buildPersonalInfoCard(BuildContext context) {
+    final themeColor = Theme.of(context).primaryColor;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor.withValues(alpha: 0.05),
+        color: themeColor.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.2)),
+        border: Border.all(color: themeColor.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(LucideIcons.user, size: 18, color: Theme.of(context).primaryColor),
+              Icon(LucideIcons.user, size: 18, color: themeColor),
               const SizedBox(width: 8),
               const Text('我的預訂資訊', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             ],
@@ -149,7 +169,7 @@ class ActivityDetailPage extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -178,3 +198,4 @@ class ActivityDetailPage extends StatelessWidget {
     );
   }
 }
+

@@ -19,6 +19,7 @@ class ActivityEntity {
   final String? locationName;
   final double? latitude;
   final double? longitude;
+  final String? imageUrl;
 
   ActivityEntity({
     required this.id,
@@ -34,5 +35,6 @@ class ActivityEntity {
     this.locationName,
     this.latitude,
     this.longitude,
+    this.imageUrl,
   });
 }

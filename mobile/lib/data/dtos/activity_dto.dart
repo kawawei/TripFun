@@ -21,6 +21,7 @@ class ActivityDto {
   final String? locationName;
   final double? latitude;
   final double? longitude;
+  final String? imageUrl;
 
   ActivityDto({
     required this.id,
@@ -36,6 +37,7 @@ class ActivityDto {
     this.locationName,
     this.latitude,
     this.longitude,
+    this.imageUrl,
   });
 
   factory ActivityDto.fromJson(Map<String, dynamic> json) {
@@ -53,6 +55,7 @@ class ActivityDto {
       locationName: json['location_name'] as String?,
       latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
       longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
+      imageUrl: json['image_url'] as String?,
     );
   }
 
@@ -71,6 +74,7 @@ class ActivityDto {
       locationName: locationName,
       latitude: latitude,
       longitude: longitude,
+      imageUrl: imageUrl,
     );
   }
 }

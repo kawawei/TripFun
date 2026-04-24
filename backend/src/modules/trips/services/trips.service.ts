@@ -76,18 +76,7 @@ export class TripsService implements OnModuleInit {
           subtitle: '開啟海島假期',
           type: 'ATTRACTION',
           icon_name: 'map-pin',
-        },
-        {
-          trip_id: laTrip.id,
-          time: '10:00 (5/1)',
-          title: '大韓航空前往首爾',
-          subtitle: '仁川國際機場 (ICN)',
-          type: 'FLIGHT',
-          icon_name: 'plane',
-          personal_info: {
-            '航空公司': '大韓航空',
-            '日期': '5月1日',
-          },
+          image_url: 'https://images.unsplash.com/photo-1544257750-572358f5da22?q=80&w=800',
         },
         {
           trip_id: laTrip.id,
@@ -96,6 +85,11 @@ export class TripsService implements OnModuleInit {
           subtitle: '享受正宗韓式料理',
           type: 'FOOD',
           icon_name: 'utensils',
+          image_url: 'https://images.unsplash.com/photo-159060451804e-ab90437452d3?q=80&w=800',
+          personal_info: {
+            '航空公司': '大韓航空',
+            '日期': '5月1日',
+          },
         },
         {
           trip_id: laTrip.id,

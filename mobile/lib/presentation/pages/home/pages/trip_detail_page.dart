@@ -223,11 +223,12 @@ class TripDetailPage extends ConsumerWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ActivityDetailPage(
-                      title: activity.title,
-                      category: activity.type,
-                      personalInfo: activity.personalInfo?.map((k, v) => MapEntry(k, v.toString())),
-                    ),
+                      builder: (context) => ActivityDetailPage(
+                        title: activity.title,
+                        category: activity.type,
+                        imageUrl: activity.imageUrl,
+                        personalInfo: activity.personalInfo?.map((k, v) => MapEntry(k, v.toString())),
+                      ),
                   ),
                 );
               },

@@ -4,6 +4,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TripsModule } from './modules/trips/trips.module';
 import { Trip } from './modules/trips/entities/trip.entity';
 import { Activity } from './modules/trips/entities/activity.entity';
+import { UploadModule } from './modules/upload/upload.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 /**
  * @file app.module.ts
@@ -32,7 +35,12 @@ import { Activity } from './modules/trips/entities/activity.entity';
       }),
       inject: [ConfigService],
     }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads',
+    }),
     TripsModule,
+    UploadModule,
   ],
   controllers: [],
   providers: [],
