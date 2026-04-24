@@ -234,6 +234,18 @@
   - 使用 `toString()` 先統一轉為字串，再用 `int.tryParse()` 安全轉換，相容 String 與 num 兩種輸入型別。
 
 - **驗證結果**:
-  - 執行 Hot Reload 後，首頁成功載入行程卡片，不再出現 TypeError。
+  - 執行 Hot Reload後，首頁成功載入行程卡片，不再出現 TypeError。
 
-紀錄時間：21:12
+### 後端依賴損壞：pnpm JSON 解析錯誤 (pnpm: ERR_PNPM_JSON_PARSE)
+- **問題描述 (Issue)**: 
+  - 場景：在安裝後端 `multer` 及相關圖片處理套件時發生錯誤。
+  - 錯誤訊息：` ERR_PNPM_JSON_PARSE  Unexpected end of JSON input while parsing empty string in .../eslint/package.json`。
+- **原因分析**:
+  - `node_modules` 內部緩存或檔案損壞。可能是先前安裝過程中斷導致 `eslint/package.json` 變為空檔案，使得 `pnpm` 無法正確解析元數據。
+- **解決方案 (Solution)**:
+  - 執行 `pnpm install` 觸發依賴完整檢查。
+  - 若失效，理想解決方案是刪除 `node_modules` 並重建，但因權限問題受阻時，可透過重新安裝 (`pnpm add`) 目標套件來觸發局部重建。
+- **驗證結果**:
+  - 成功安裝 `multer`、`@nestjs/serve-static` 及 `@nestjs/platform-express`，後端編譯正常。
+
+紀錄時間：22:47
