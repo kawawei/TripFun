@@ -328,3 +328,17 @@
   - 重整後前端順序完美符合先貴賓室、再搭機邏輯，跨日活動亦無錯亂。
 
 紀錄時間：17:12
+
+### 伺服器部署：預設航班圖片 404 失效 (Static Images 404 after Deployment)
+- **問題描述 (Issue)**: 
+  - 在伺服器環境重新部署後，UI 中的聯合航空與大韓航空圖片發生 `404 Not Found` 錯誤，進而引發 `EncodingError: The source image cannot be decoded` 崩潰。
+- **原因分析**:
+  - 專案架構中為了保護用戶「手動上傳」的照片不被重啟洗掉，設定了 `tripfun-backend-uploads` 作為持久化 Volume 並覆蓋容器的 `/app/uploads/` 目錄。
+  - 後端 `Dockerfile` 本身也沒有複製 `uploads` 子目錄，這導致本機透過版控提交上去的各種內建飛機圖片，在 Server 端被那層空殼 Volume 給「遮蔽」了，根本沒有注入到容器內。
+- **解決方案 (Solution)**:
+  - 登入伺服器端，手動執行 `docker cp /opt/project/TripFun/backend/uploads/. tripfun-backend:/app/uploads/`。
+  - 直接將伺服器 Git 目錄下的所有原始內建圖片，強制拷貝進去負責持久化的 volume 中，成功打通資源。
+- **驗證結果**:
+  - 用 `curl -I` 驗證圖片 URL 後重新獲得 `200 OK`，Flutter Web 顯示正常。
+
+紀錄時間：17:24
