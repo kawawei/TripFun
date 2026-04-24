@@ -213,3 +213,27 @@
 - **驗證結果**:
   - `git status` 恢復至 0.02 秒。
   - 異常的 staged delete 消失，僅保留正常的開發變更。
+
+### Flutter Web 崩潰：color_value 型別不匹配 (TypeError: String is not subtype of num)
+- **問題描述 (Issue)**:
+  - 場景：Flutter Web App 啟動後，首頁顯示紅色錯誤畫面。
+  - 錯誤訊息：`TypeError: '4279286145': type 'String' is not a subtype of type 'num'`
+
+- **原因分析**:
+  - `TripDto.fromJson` 中使用 `(json['color_value'] as num).toInt()` 強制型別轉換。
+  - 後端 API 回傳的 `color_value` 欄位在 JSON 解析後為 **String** 型別，而非 `num`，導致 `as num` 直接拋出 TypeError。
+
+- **解決方案**:
+  - 修改 `mobile/lib/data/dtos/trip_dto.dart` 第 42 行，將型別轉換改為：
+    ```dart
+    // 修改前
+    colorValue: json['color_value'] != null ? (json['color_value'] as num).toInt() : null,
+    // 修改後
+    colorValue: json['color_value'] != null ? int.tryParse(json['color_value'].toString()) : null,
+    ```
+  - 使用 `toString()` 先統一轉為字串，再用 `int.tryParse()` 安全轉換，相容 String 與 num 兩種輸入型別。
+
+- **驗證結果**:
+  - 執行 Hot Reload 後，首頁成功載入行程卡片，不再出現 TypeError。
+
+紀錄時間：21:12

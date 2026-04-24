@@ -39,7 +39,7 @@ class TripDto {
       endDate: json['endDate'] as String? ?? DateTime.now().toIso8601String(),
       memberCount: (json['memberCount'] as num? ?? 1).toInt(),
       iconName: json['icon_name'] as String?,
-      colorValue: json['color_value'] != null ? (json['color_value'] as num).toInt() : null,
+      colorValue: json['color_value'] != null ? int.tryParse(json['color_value'].toString()) : null,
       status: json['status'] as String? ?? 'ACTIVE',
     );
   }
