@@ -157,7 +157,10 @@ class TtsNotifier extends StateNotifier<TtsState> {
   }
 
   List<String> _splitText(String text) {
-    return text.split(RegExp(r'[。！？\n\r]')).where((s) => s.trim().isNotEmpty).toList();
+    // 移除 Emoji 圖示 / Strip Emojis
+    final String cleanText = text.replaceAll(RegExp(r'[\u{1f300}-\u{1f5ff}\u{1f600}-\u{1f64f}\u{1f680}-\u{1f6ff}\u{2600}-\u{26ff}\u{2700}-\u{27bf}\u{1f900}-\u{1f9ff}\u{1f1e6}-\u{1f1ff}]', unicode: true), '');
+    // 以句號、問號、感嘆號或換行符號切分
+    return cleanText.split(RegExp(r'[。！？\n\r]')).where((s) => s.trim().isNotEmpty).toList();
   }
 
   Future<void> speak(String text, {String languageCode = 'zh-TW'}) async {
