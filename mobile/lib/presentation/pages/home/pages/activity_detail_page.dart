@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -48,6 +49,7 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
       body: CustomScrollView(
         slivers: [
           _buildSliverAppBar(context),
+          if (_hasMultipleImages()) _buildPageIndicator(),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(20),
@@ -95,13 +97,19 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
             if (hasImages)
               PageView.builder(
                 controller: _pageController,
+                physics: const BouncingScrollPhysics(),
+                scrollBehavior: ScrollConfiguration.of(context).copyWith(
+                  dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse, PointerDeviceKind.trackpad},
+                ),
                 onPageChanged: (index) => setState(() => _currentPage = index),
                 itemCount: images.length,
                 itemBuilder: (context, index) {
                   final url = images[index];
-                  return CachedNetworkImage(
-                    imageUrl: url,
-                    fit: BoxFit.cover,
+                  return GestureDetector(
+                    onTap: () => _showFullScreenImage(context, url),
+                    child: CachedNetworkImage(
+                      imageUrl: url,
+                      fit: BoxFit.cover,
                     fadeOutDuration: const Duration(milliseconds: 300),
                     fadeInDuration: const Duration(milliseconds: 500),
                     placeholder: (context, url) => Container(
@@ -133,30 +141,6 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
                 ),
               ),
             ),
-
-            // 頁碼指示器 / Page Indicator
-            if (hasImages && images.length > 1)
-              Positioned(
-                bottom: 25,
-                left: 0,
-                right: 0,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    images.length,
-                    (index) => AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      width: _currentPage == index ? 20 : 8,
-                      height: 8,
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(4),
-                        color: _currentPage == index ? Colors.white : Colors.white.withOpacity(0.4),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
           ],
         ),
         title: Text(widget.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
@@ -170,6 +154,70 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
       color: Colors.grey.shade200,
       child: Center(
         child: Icon(LucideIcons.camera, size: 64, color: Colors.grey.shade400),
+      ),
+    );
+  }
+
+  bool _hasMultipleImages() => widget.imageUrls != null && widget.imageUrls!.length > 1;
+
+  Widget _buildPageIndicator() {
+    final images = widget.imageUrls!;
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.only(top: 16, bottom: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(
+            images.length,
+            (index) => AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              width: _currentPage == index ? 20 : 8,
+              height: 8,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(4),
+                color: _currentPage == index ? Theme.of(context).primaryColor : Colors.grey.shade300,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showFullScreenImage(BuildContext context, String imageUrl) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          alignment: Alignment.center,
+          fit: StackFit.expand,
+          children: [
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(color: Colors.transparent),
+            ),
+            InteractiveViewer(
+              child: CachedNetworkImage(
+                imageUrl: imageUrl,
+                fit: BoxFit.contain,
+                placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+                errorWidget: (context, url, err) => const Icon(LucideIcons.imageOff, color: Colors.white, size: 48),
+              ),
+            ),
+            Positioned(
+              top: 40,
+              right: 20,
+              child: IconButton(
+                icon: const Icon(LucideIcons.x, color: Colors.white, size: 32),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
