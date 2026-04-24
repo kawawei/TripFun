@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PackingItem } from '../entities/packing-item.entity';
@@ -12,7 +12,7 @@ import { UserPackingStatus } from '../entities/user-packing-status.entity';
  */
 
 @Injectable()
-export class PackingService implements OnModuleInit {
+export class PackingService {
   constructor(
     @InjectRepository(PackingItem)
     private readonly itemRepository: Repository<PackingItem>,
@@ -20,77 +20,6 @@ export class PackingService implements OnModuleInit {
     private readonly statusRepository: Repository<UserPackingStatus>,
   ) {}
 
-  async onModuleInit() {
-    // 延遲執行初始化，確保資料庫表格已由 TypeORM 同步完成 / Delay initialization to ensure DB tables are synced
-    setTimeout(() => {
-      this.initializeDefaultItems().catch(err => {
-        console.error('Failed to initialize default packing items:', err.message);
-      });
-    }, 5000);
-  }
-
-  /**
-   * 初始化預設清單 / Initialize default items
-   */
-  private async initializeDefaultItems() {
-    const count = await this.itemRepository.count();
-    if (count === 0) {
-      const defaultItems = [
-        // 重要證件與金流
-        { title: '護照 (及其影本)', category: '重要證件與金流' },
-        { title: '美簽 (ESTA/Visa)', category: '重要證件與金流' },
-        { title: '韓簽 (K-ETA)', category: '重要證件與金流' },
-        { title: '國際機票 (電子/紙本)', category: '重要證件與金流' },
-        { title: '外幣現金 (USD, KRW)', category: '重要證件與金流' },
-        { title: '信用卡 (海外刷卡推薦)', category: '重要證件與金流' },
-        
-        // 電子產品與配件
-        { title: '萬用轉接頭 (美國與台灣相同，韓國為歐規)', category: '電子產品與配件' },
-        { title: '變壓器 (注意韓國為 220V)', category: '電子產品與配件' },
-        { title: '行動電源', category: '電子產品與配件' },
-        { title: '多孔充電頭與線材', category: '電子產品與配件' },
-        { title: 'eSIM / 網卡 / Wi-Fi 分享器', category: '電子產品與配件' },
-        
-        // 個人衣物與穿戴
-        { title: '換洗衣物', category: '個人衣物與穿戴' },
-        { title: '保暖外套 (美國長程航程冷, 韓國四季分明)', category: '個人衣物與穿戴' },
-        { title: '舒適運動鞋', category: '個人衣物與穿戴' },
-        { title: '太陽眼鏡', category: '個人衣物與穿戴' },
-        
-        // 盥洗物品
-        { title: '牙刷、牙膏 (美國飯店常不提供)', category: '盥洗物品' },
-        { title: '洗面乳、個人護膚品', category: '盥洗物品' },
-        { title: '防曬乳', category: '盥洗物品' },
-        { title: '刮鬍刀', category: '盥洗物品' },
-        
-        // 常備藥品與防疫
-        { title: '感冒藥、止痛藥', category: '常備藥品與防疫' },
-        { title: '腸胃藥', category: '常備藥品與防疫' },
-        { title: '個人長期服用藥物', category: '常備藥品與防疫' },
-        { title: '口罩與乾洗手', category: '常備藥品與防疫' },
-        
-        // 旅遊票券與計畫
-        { title: '飯店預約單', category: '旅遊票券與計畫' },
-        { title: '旅遊保險證明', category: '旅遊票券與計畫' },
-        { title: '主題樂園/門票 (如迪士尼、環球影城)', category: '旅遊票券與計畫' },
-        
-        // 長程飛行與生活雜物
-        { title: '頸枕、眼罩 (美國長途必備)', category: '長程飛行與生活雜物' },
-        { title: '環保購物袋 (韓國很多超市不提供塑膠袋)', category: '長程飛行與生活雜物' },
-        { title: '空水壺 (入關後裝水)', category: '長程飛行與生活雜物' },
-        
-        // 目的地特定項目
-        { title: 'T-Money卡 (韓國交通卡)', category: '目的地特定項目' },
-        { title: 'Naver Map/Kakao Map (韓國導航)', category: '目的地特定項目' },
-        { title: 'Uber/Lyft APP (美國叫車)', category: '目的地特定項目' },
-      ];
-
-      await this.itemRepository.save(
-        defaultItems.map(item => ({ ...item, is_custom: false }))
-      );
-      console.log('Default packing list initialized.');
-    }
-  }
 
   /**
    * 獲取完整清單（包含特定使用者的勾選狀態）
