@@ -4,6 +4,7 @@
  * @description_zh 提供穩定、支持長文本的語音朗讀服務，兼容 Mobile 與 Web
  */
 
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
