@@ -110,16 +110,17 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
                     child: CachedNetworkImage(
                       imageUrl: url,
                       fit: BoxFit.cover,
-                    fadeOutDuration: const Duration(milliseconds: 300),
-                    fadeInDuration: const Duration(milliseconds: 500),
-                    placeholder: (context, url) => Container(
-                      color: Colors.grey.shade200,
-                      child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      fadeOutDuration: const Duration(milliseconds: 300),
+                      fadeInDuration: const Duration(milliseconds: 500),
+                      placeholder: (context, url) => Container(
+                        color: Colors.grey.shade200,
+                        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      ),
+                      errorWidget: (context, url, error) {
+                        print('Image load error: $url - $error');
+                        return _buildPlaceholder();
+                      },
                     ),
-                    errorWidget: (context, url, error) {
-                      print('Image load error: $url - $error');
-                      return _buildPlaceholder();
-                    },
                   );
                 },
               )
