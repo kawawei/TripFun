@@ -52,6 +52,45 @@ class TtsNotifier extends StateNotifier<TtsState> {
     await _ensureInitialized();
 
     try {
+      // 嘗試獲取高品質語音 / Select high-quality voices
+      final dynamic voices = await _flutterTts.getVoices;
+      if (voices != null && voices is List) {
+        try {
+          final targetVoices = voices.where((v) {
+            final String locale = v['locale']?.toString().toLowerCase() ?? '';
+            return locale.contains(languageCode.toLowerCase().replaceAll('-', '_')) || 
+                   locale.contains(languageCode.toLowerCase());
+          }).toList();
+
+          if (targetVoices.isNotEmpty) {
+            // 根據性別偏好與品質挑選
+            dynamic selected;
+            if (gender == 'female') {
+              selected = targetVoices.firstWhere(
+                (v) => v['name']?.toString().toLowerCase().contains('female') ?? false,
+                orElse: () => targetVoices.firstWhere(
+                  (v) => v['name']?.toString().toLowerCase().contains('google') ?? false,
+                  orElse: () => targetVoices.first,
+                ),
+              );
+            } else if (gender == 'male') {
+              selected = targetVoices.firstWhere(
+                (v) => v['name']?.toString().toLowerCase().contains('male') ?? false,
+                orElse: () => targetVoices.first,
+              );
+            } else {
+              selected = targetVoices.firstWhere(
+                (v) => v['name']?.toString().toLowerCase().contains('google') ?? false,
+                orElse: () => targetVoices.first,
+              );
+            }
+            await _flutterTts.setVoice({"name": selected["name"], "locale": selected["locale"]});
+          }
+        } catch (e) {
+          debugPrint("Voice Selection Error: $e");
+        }
+      }
+
       // 如果正在撥放且點擊同一個，就停止
       if (state.isPlaying && state.currentGender == gender) {
         await stop();
@@ -60,28 +99,26 @@ class TtsNotifier extends StateNotifier<TtsState> {
 
       await stop(); // 先停止前一個
 
-      // 設定音色與參數
-      await _flutterTts.setLanguage(languageCode);
+      // 設定參數
       if (gender == 'female') {
-        await _flutterTts.setPitch(1.2);
-        await _flutterTts.setSpeechRate(0.52);
+        await _flutterTts.setPitch(1.1);
+        await _flutterTts.setSpeechRate(0.48);
       } else if (gender == 'male') {
         await _flutterTts.setPitch(0.85);
-        await _flutterTts.setSpeechRate(0.48);
+        await _flutterTts.setSpeechRate(0.45);
       } else {
         await _flutterTts.setPitch(1.0);
-        await _flutterTts.setSpeechRate(1.0);
+        await _flutterTts.setSpeechRate(0.5);
       }
 
       state = state.copyWith(isPlaying: true, currentGender: gender);
 
-      // 分段處理長文本 (Web 兼容性優化) / Split long text for Web stability
-      if (kIsWeb && text.length > 100) {
+      // 分段處理長文本 / Split text for Web
+      if (kIsWeb && text.length > 80) {
         List<String> chunks = _splitText(text);
         for (String chunk in chunks) {
           if (!state.isPlaying) break;
           await _flutterTts.speak(chunk);
-          // 在 Web 上需要等待前一段播完，這裡可以使用 await 確保順序
         }
       } else {
         await _flutterTts.speak(text);
