@@ -81,7 +81,7 @@ class _PackingListPageState extends ConsumerState<PackingListPage> {
             // ========================================
             // 載入中 / Loading
             // ========================================
-            if (isLoading)
+            else if (isLoading)
               const SliverFillRemaining(
                 child: Center(child: CircularProgressIndicator()),
               )
@@ -332,6 +332,7 @@ class _PackingListPageState extends ConsumerState<PackingListPage> {
     // 從現有清單取得所有已存在的類別
     final existingCategories = ref
         .read(packingListProvider)
+        .items
         .map((item) => item.category)
         .toSet()
         .toList();

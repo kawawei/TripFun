@@ -416,3 +416,81 @@
   - 語音可穩定讀完長篇，卡片溢出警告消失。
 
 紀錄時間：03:35
+
+### 行李清單後端 API 500 錯誤：Entity 未注冊至根模組 (PackingItem Not Registered in Root TypeORM)
+2026-04-25 04:15 — 行李清單 API 回傳 500
+
+問題描述
+- 場景：前端 App 呼叫 `GET /trips/packing` 後端回傳 500 Internal Server Error。
+- 錯誤訊息：`No metadata for "PackingItem" was found.`（後端容器日誌）
+
+原因分析
+- `PackingItem` 與 `UserPackingStatus` 兩個 Entity 雖然已在 `TripsModule` 的 `TypeOrmModule.forFeature` 中注冊，但**根模組 `app.module.ts` 的 `TypeOrmModule.forRootAsync` 中的 `entities` 陣列卻遺漏了這兩個 Entity**。
+- TypeORM 需要在根配置中掃描所有 Entity 才能建立 metadata，否則即便 Module 層引用正確，跨 Module 的關聯查詢仍會找不到 metadata。
+
+解決方案
+- 在 `backend/src/app.module.ts` 補上：
+  ```typescript
+  import { PackingItem } from './modules/trips/entities/packing-item.entity';
+  import { UserPackingStatus } from './modules/trips/entities/user-packing-status.entity';
+  // entities 陣列由 [Trip, Activity] 改為 [Trip, Activity, PackingItem, UserPackingStatus]
+  ```
+
+驗證結果
+- 重新部署後端後，日誌顯示 `Nest application successfully started`，不再有 500 錯誤。
+
+紀錄時間：04:15
+
+---
+
+### App 串接錯誤：baseUrl 指向本地後端而非測試伺服器 (baseUrl Pointing to localhost Instead of Server)
+2026-04-25 04:30 — App 資料來源不正確
+
+問題描述
+- 場景：以為 App 已一直串接測試伺服器，但清除伺服器資料庫後 App 資料仍未改變。
+- 發現 `trip_service.dart` 的 `baseUrl` 為 `http://localhost:9001`，連接本地 Docker 後端，並非測試伺服器。
+
+原因分析
+- `trip_service.dart` 開發初期設定為本地後端位址，後續切換伺服器時未一併修改前端。
+- 本機同樣運行了一套 `tripfun-backend` 容器（port 9001），且其資料庫與測試伺服器完全獨立。
+
+解決方案
+- 修改 `mobile/lib/data/services/trip_service.dart`：
+  ```dart
+  // 修改前
+  static const String baseUrl = 'http://localhost:9001';
+  // 修改後
+  static const String baseUrl = 'http://43.103.3.57:8087';
+  ```
+
+驗證結果
+- App 重整後直接連接測試伺服器，與伺服器資料庫完全同步。
+
+紀錄時間：04:31
+
+---
+
+### Flutter UI 邏輯錯誤：空清單與載入中顯示相同 Loading Spinner (Empty State vs Loading State Confusion)
+2026-04-25 04:32 — 行李清單頁面永遠顯示「正在載入清單」
+
+問題描述
+- 場景：API 已成功串接測試伺服器（資料庫為空），但頁面持續顯示轉圈動畫與「正在載入清單...」，無法消失。
+- 錯誤訊息：`TypeError: null: type 'Null' is not a subtype of type 'bool'`（flutter run 終端）
+
+原因分析
+1. `PackingListProvider` 的 State 型別為 `List<PackingItem>`，沒有獨立的「載入中」旗標。
+2. 頁面以 `packingItems.isEmpty` 同時代表「載入中」與「真正空清單」兩種情況，導致 API 回傳空陣列後 spinner 永遠不會消失。
+3. 重構 State 型別為 `PackingState` 後，頁面的 `if (isLoading)` 少了 `else` 關鍵字，造成 Dart 語法錯誤。
+4. 對話框的類別選單程式碼對 `PackingState` 直接呼叫 `.map()`，但 `.map()` 應作用於 `PackingState.items`。
+
+解決方案
+- 新增 `PackingState` 類別包含 `items` 與 `isLoading` 兩個欄位。
+- 修正頁面判斷邏輯為：`if (user == null)` → `else if (isLoading)` → `else if (items.isEmpty)` → `else 顯示清單`。
+- 修正對話框中 `.read(packingListProvider).map(...)` 為 `.read(packingListProvider).items.map(...)`。
+
+驗證結果
+- 資料庫為空時，頁面顯示「清單是空的，點擊右下角按鈕新增行李項目」。
+- 載入中時，顯示轉圈動畫。
+- 有資料時，顯示分類清單。
+
+紀錄時間：04:34
