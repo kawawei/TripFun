@@ -170,7 +170,7 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> with WidgetsBin
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
-    _flutterTts.stop(); // 銷毀時停止所有語音
+    _stopTts(); // 銷毀時安全停止所有語音 / Safely stop TTS on dispose
     super.dispose();
   }
 
