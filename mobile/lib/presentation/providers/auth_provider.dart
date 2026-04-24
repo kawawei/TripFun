@@ -12,18 +12,13 @@ import '../../core/providers/dio_provider.dart';
 final tripMembersProvider = FutureProvider<List<UserEntity>>((ref) async {
   final dio = ref.watch(dioProvider);
   try {
-    // Fetch members from backend
+    // 嚴格要求不使用硬編碼，全由後端回傳
     final response = await dio.get('/trips/44444444-4444-4444-4444-444444444444/members');
     final List<dynamic> data = response.data;
     return data.map((json) => UserEntity(id: json['id'], name: json['name'])).toList();
   } catch (e) {
-    print('Failed to fetch members from backend, using fallback: $e');
-    return [
-      const UserEntity(id: 'u1', name: 'Kawa'),
-      const UserEntity(id: 'u2', name: 'Kelly'),
-      const UserEntity(id: 'u3', name: 'Amber'),
-      const UserEntity(id: 'u4', name: 'Vivian'),
-    ];
+    print('Failed to fetch members from backend: $e');
+    throw Exception('無法獲取成員資料，請確認後端伺服器是否已更新');
   }
 });
 
