@@ -12,6 +12,7 @@ import 'package:intl/intl.dart';
 import '../../../../domain/entities/trip_entity.dart';
 import '../../../../domain/entities/activity_entity.dart';
 import '../provider/activity_provider.dart';
+import '../../../providers/auth_provider.dart';
 import 'activity_detail_page.dart';
 
 class TripDetailPage extends ConsumerStatefulWidget {
@@ -70,6 +71,7 @@ class _TripDetailPageState extends ConsumerState<TripDetailPage> {
   @override
   Widget build(BuildContext context) {
     final activitiesAsync = ref.watch(activitiesProvider(widget.trip.id));
+    final currentUser = ref.watch(authProvider);
     final primaryColor = widget.trip.colorValue != null ? Color(widget.trip.colorValue!) : Theme.of(context).primaryColor;
 
     return Scaffold(
@@ -98,6 +100,7 @@ class _TripDetailPageState extends ConsumerState<TripDetailPage> {
                             context,
                             activity: activity,
                             primaryColor: primaryColor,
+                            currentUserId: currentUser?.id,
                             isFirst: index == 0,
                             isLast: index == activities.length - 1,
                           );
@@ -236,15 +239,35 @@ class _TripDetailPageState extends ConsumerState<TripDetailPage> {
     );
   }
 
+  Map<String, String>? _buildFilteredPersonalInfo(Map<String, dynamic>? rawInfo, String? currentUserId) {
+    if (rawInfo == null || rawInfo.isEmpty) return null;
+    final filtered = <String, String>{};
+    rawInfo.forEach((key, value) {
+      if (key == 'users' && value is Map && currentUserId != null) {
+        final userData = value[currentUserId];
+        if (userData is Map) {
+          userData.forEach((k, v) {
+            filtered[k.toString()] = v.toString();
+          });
+        }
+      } else if (key != 'users') {
+        filtered[key.toString()] = value.toString();
+      }
+    });
+    return filtered.isEmpty ? null : filtered;
+  }
+
   Widget _buildTimelineActivity(
     BuildContext context, {
     required ActivityEntity activity,
     required Color primaryColor,
+    required String? currentUserId,
     bool isFirst = false,
     bool isLast = false,
   }) {
     final iconData = _getActivityIconData(activity.iconName, activity.type);
-    final hasPersonalInfo = activity.personalInfo != null && activity.personalInfo!.isNotEmpty;
+    final filteredInfo = _buildFilteredPersonalInfo(activity.personalInfo, currentUserId);
+    final hasPersonalInfo = filteredInfo != null && filteredInfo.isNotEmpty;
 
     return IntrinsicHeight(
       child: Row(
@@ -294,7 +317,7 @@ class _TripDetailPageState extends ConsumerState<TripDetailPage> {
                         category: activity.type,
                         content: activity.content,
                         imageUrls: activity.imageUrls,
-                        personalInfo: activity.personalInfo?.map((k, v) => MapEntry(k, v.toString())),
+                        personalInfo: filteredInfo,
                       ),
                   ),
                 );
