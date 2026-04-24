@@ -30,6 +30,12 @@ export class TripsController {
     return this.tripsService.updateMembers(id, membersData);
   }
 
+  // TODO: Temporary route to reset flight data
+  @Get('reset-flights/now')
+  async resetFlights() {
+    return this.tripsService.resetFlightActivities();
+  }
+
   @Post()
   async create(@Body() createTripDto: any) {
     return this.tripsService.create(createTripDto);

@@ -138,6 +138,71 @@ export class TripsService implements OnModuleInit {
     return this.tripRepository.findOne({ where: { id } });
   }
 
+  async resetFlightActivities() {
+    const tripId = '44444444-4444-4444-4444-444444444444';
+    // Remove old flight records
+    await this.activityRepository.delete({ trip_id: tripId, type: 'FLIGHT' });
+
+    // Seed personalized flights
+    await this.activityRepository.save([
+      {
+        trip_id: tripId,
+        time: '11:00',
+        title: '聯合航空 (TPE - GUM)',
+        subtitle: '台北出發，飛行約3小時45分',
+        type: 'FLIGHT',
+        icon_name: 'plane',
+        sort_order: 1,
+        personal_info: {
+          '航段': 'TPE 往 GUM',
+          'users': {
+            'u1': { '旅客': 'Chuanchun Wei', '座位': '25F' },
+            'u2': { '旅客': 'Yungchin Wei', '座位': '24F' },
+            'u3': { '旅客': 'Mingjung Chang', '座位': '25E' },
+            'u4': { '旅客': 'Binghong Wei', '座位': '24E' }
+          }
+        }
+      },
+      {
+        trip_id: tripId,
+        time: '18:00',
+        title: '聯合航空 (GUM - HNL)',
+        subtitle: '關島轉機前往夏威夷',
+        type: 'FLIGHT',
+        icon_name: 'plane',
+        sort_order: 2,
+        personal_info: {
+          '航段': 'GUM 往 HNL',
+          'users': {
+            'u1': { '旅客': 'Chuanchun Wei', '座位': '39A' },
+            'u2': { '旅客': 'Yungchin Wei', '座位': '40A' },
+            'u3': { '旅客': 'Mingjung Chang', '座位': '40B' },
+            'u4': { '旅客': 'Binghong Wei', '座位': '39B' }
+          }
+        }
+      },
+      {
+        trip_id: tripId,
+        time: '09:00 (4/26)',
+        title: '聯合航空 (HNL - LAX)',
+        subtitle: '抵達洛杉磯國際機場',
+        type: 'FLIGHT',
+        icon_name: 'plane-landing',
+        sort_order: 3,
+        personal_info: {
+          '航段': 'HNL 往 LAX',
+          'users': {
+            'u1': { '旅客': 'Chuanchun Wei', '座位': '28J' },
+            'u2': { '旅客': 'Yungchin Wei', '座位': '29K' },
+            'u3': { '旅客': 'Mingjung Chang', '座位': '29L' },
+            'u4': { '旅客': 'Binghong Wei', '座位': '28K' }
+          }
+        }
+      }
+    ]);
+    return { success: true };
+  }
+
   async updateMembers(id: string, members: any[]): Promise<Trip> {
     await this.tripRepository.update(id, { members });
     return this.findOne(id);
