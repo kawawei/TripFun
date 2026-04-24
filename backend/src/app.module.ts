@@ -4,6 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TripsModule } from './modules/trips/trips.module';
 import { Trip } from './modules/trips/entities/trip.entity';
 import { Activity } from './modules/trips/entities/activity.entity';
+import { PackingItem } from './modules/trips/entities/packing-item.entity';
+import { UserPackingStatus } from './modules/trips/entities/user-packing-status.entity';
 import { UploadModule } from './modules/upload/upload.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
@@ -30,7 +32,7 @@ import { join } from 'path';
         username: configService.get<string>('DB_USER', 'postgres'),
         password: configService.get<string>('DB_PASSWORD', 'tripfun_pass'),
         database: configService.get<string>('DB_NAME', 'tripfun_db'),
-        entities: [Trip, Activity],
+        entities: [Trip, Activity, PackingItem, UserPackingStatus],
         synchronize: true, // 僅限開發環境使用 / Development only
       }),
       inject: [ConfigService],
