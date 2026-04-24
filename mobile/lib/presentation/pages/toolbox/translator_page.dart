@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:translator/translator.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import '../../providers/tts_provider.dart';
 
 // ========================================
 // 狀態管理 / State Management
@@ -109,73 +110,7 @@ final translationProvider =
 // 語音播放狀態管理 / TTS State Management
 // ========================================
 
-class TtsNotifier extends StateNotifier<bool> {
-  TtsNotifier() : super(false);
-
-  final FlutterTts _flutterTts = FlutterTts();
-
-  Future<void> speak(String text, String languageCode) async {
-    if (text.isEmpty) return;
-
-    try {
-      // 1. 設定語言
-      String ttsLang = 'en-US';
-      if (languageCode == 'zh-tw') {
-        ttsLang = 'zh-TW';
-      } else if (languageCode == 'ko') {
-        ttsLang = 'ko-KR';
-      }
-      await _flutterTts.setLanguage(ttsLang);
-
-      // 2. 獲取所有可用語音並嘗試尋找女聲/高品質語音
-      final dynamic voices = await _flutterTts.getVoices;
-      if (voices != null && voices is List) {
-        // 嘗試在該語言中尋找包含 'Google' 或 'Female' 的語音（通常品質較好）
-        try {
-          final targetVoices = voices.where((v) {
-            final String name = v['name']?.toString().toLowerCase() ?? '';
-            final String locale = v['locale']?.toString().toLowerCase() ?? '';
-            return locale.contains(ttsLang.toLowerCase().replaceAll('-', '_')) || 
-                   locale.contains(ttsLang.toLowerCase());
-          }).toList();
-
-          if (targetVoices.isNotEmpty) {
-            // 優先序：包含 female -> 包含 Google -> 第一個
-            dynamic selectedVoice = targetVoices.firstWhere(
-              (v) => v['name']?.toString().toLowerCase().contains('female') ?? false,
-              orElse: () => targetVoices.firstWhere(
-                (v) => v['name']?.toString().toLowerCase().contains('google') ?? false,
-                orElse: () => targetVoices.first,
-              ),
-            );
-            await _flutterTts.setVoice({"name": selectedVoice["name"], "locale": selectedVoice["locale"]});
-          }
-        } catch (e) {
-          debugPrint('Voice selection error: $e');
-        }
-      }
-
-      await _flutterTts.setPitch(1.0);
-      await _flutterTts.setSpeechRate(1.0);
-      
-      state = true;
-      await _flutterTts.speak(text);
-    } catch (e) {
-      debugPrint('TTS Error: $e');
-    } finally {
-      state = false;
-    }
-  }
-
-  Future<void> stop() async {
-    await _flutterTts.stop();
-    state = false;
-  }
-}
-
-final ttsProvider = StateNotifierProvider<TtsNotifier, bool>((ref) {
-  return TtsNotifier();
-});
+// === 已遷移至 tts_provider.dart ===
 
 // ========================================
 // 頁面組件 / Page Component
@@ -307,7 +242,12 @@ class _TranslatorPageState extends ConsumerState<TranslatorPage> {
                                 Row(
                                   children: [
                                     GestureDetector(
-                                      onTap: () => ref.read(ttsProvider.notifier).speak(state.sourceText, state.sourceLang),
+                                      onTap: () {
+                                        String ttsLang = 'zh-TW';
+                                        if (state.sourceLang == 'en') ttsLang = 'en-US';
+                                        if (state.sourceLang == 'ko') ttsLang = 'ko-KR';
+                                        ref.read(ttsProvider.notifier).speak(state.sourceText, languageCode: ttsLang);
+                                      },
                                       child: const Icon(LucideIcons.volume2, size: 18, color: Colors.blue),
                                     ),
                                     const SizedBox(width: 12),
@@ -403,10 +343,15 @@ class _TranslatorPageState extends ConsumerState<TranslatorPage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
-                                IconButton(
-                                  icon: const Icon(LucideIcons.volume2, size: 20, color: Colors.blue),
-                                  onPressed: () => ref.read(ttsProvider.notifier).speak(state.translatedText, state.targetLang),
-                                ),
+                                  IconButton(
+                                    icon: const Icon(LucideIcons.volume2, size: 20, color: Colors.blue),
+                                    onPressed: () {
+                                      String ttsLang = 'en-US';
+                                      if (state.targetLang == 'zh-tw') ttsLang = 'zh-TW';
+                                      if (state.targetLang == 'ko') ttsLang = 'ko-KR';
+                                      ref.read(ttsProvider.notifier).speak(state.translatedText, languageCode: ttsLang);
+                                    },
+                                  ),
                                 IconButton(
                                   icon: const Icon(LucideIcons.copy, size: 20, color: Colors.blue),
                                   onPressed: () {
@@ -627,7 +572,7 @@ class _TranslatorPageState extends ConsumerState<TranslatorPage> {
                         icon: const Icon(LucideIcons.volume2, color: Colors.blue, size: 18),
                         constraints: const BoxConstraints(),
                         padding: const EdgeInsets.all(4),
-                        onPressed: () => ref.read(ttsProvider.notifier).speak(phrase['en']!, 'en'),
+                        onPressed: () => ref.read(ttsProvider.notifier).speak(phrase['en']!, languageCode: 'en-US'),
                       ),
                     ],
                   ),
@@ -655,7 +600,7 @@ class _TranslatorPageState extends ConsumerState<TranslatorPage> {
                         icon: const Icon(LucideIcons.volume2, color: Colors.grey, size: 18),
                         constraints: const BoxConstraints(),
                         padding: const EdgeInsets.all(4),
-                        onPressed: () => ref.read(ttsProvider.notifier).speak(phrase['ko']!, 'ko'),
+                        onPressed: () => ref.read(ttsProvider.notifier).speak(phrase['ko']!, languageCode: 'ko-KR'),
                       ),
                     ],
                   ),

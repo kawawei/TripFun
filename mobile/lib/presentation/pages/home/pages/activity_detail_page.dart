@@ -10,11 +10,13 @@ import 'dart:js' as js; // 用於 Web 原生調用 / For native JS interop
 import 'package:flutter/foundation.dart'; // 用於 kIsWeb 判斷
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import '../../../providers/tts_provider.dart';
 
-class ActivityDetailPage extends StatefulWidget {
+class ActivityDetailPage extends ConsumerStatefulWidget {
   final String title;
   final String category;
   final String? content;
@@ -31,63 +33,24 @@ class ActivityDetailPage extends StatefulWidget {
   });
 
   @override
-  State<ActivityDetailPage> createState() => _ActivityDetailPageState();
+  ConsumerState<ActivityDetailPage> createState() => _ActivityDetailPageState();
 }
 
-class _ActivityDetailPageState extends State<ActivityDetailPage> with WidgetsBindingObserver {
+class _ActivityDetailPageState extends ConsumerState<ActivityDetailPage> with WidgetsBindingObserver {
   int _currentPage = 0;
   final PageController _pageController = PageController();
   
-  // 語音組件 / TTS Components
-  FlutterTts? _flutterTts;
-  bool _isPlaying = false;
-  String? _currentVoiceGender; // 'male' or 'female'
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    if (!kIsWeb) {
-      _initTts();
-    }
-  }
-
-  void _initTts() async {
-    try {
-      _flutterTts ??= FlutterTts();
-      await _flutterTts!.setLanguage("zh-TW");
-      await _flutterTts!.setSpeechRate(0.5);
-      await _flutterTts!.setVolume(1.0);
-      await _flutterTts!.setPitch(1.0);
-
-      _flutterTts!.setCompletionHandler(() {
-        if (mounted) setState(() => _isPlaying = false);
-      });
-
-      _flutterTts!.setCancelHandler(() {
-        if (mounted) setState(() => _isPlaying = false);
-      });
-    } catch (e) {
-      debugPrint("TTS Init Error: $e");
-    }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
-      _stopTts();
+      ref.read(ttsProvider.notifier).stop();
     }
-  }
-
-  void _stopTts() {
-    try {
-      if (kIsWeb) {
-        js.context.callMethod('eval', ['window.speechSynthesis.cancel()']);
-      } else {
-        _flutterTts?.stop();
-      }
-    } catch (_) {}
-    if (mounted) setState(() => _isPlaying = false);
   }
 
   Future<void> _toggleSpeak(String gender) async {
@@ -98,65 +61,9 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> with WidgetsBin
     if (textToSpeak.contains("--- 🌟 飯店亮點 (Highlights) ---")) {
       textToSpeak = textToSpeak.split("--- 🌟 飯店亮點 (Highlights) ---").last;
     }
-    // 清除特殊符號
-    textToSpeak = textToSpeak.replaceAll('"', '').replaceAll("'", "").replaceAll('\n', ' ');
-
-    if (_isPlaying && _currentVoiceGender == gender) {
-      _stopTts();
-      return;
-    }
-
-    _stopTts(); // 先停止
-
-    setState(() {
-      _isPlaying = true;
-      _currentVoiceGender = gender;
-    });
-
-    if (kIsWeb) {
-      // --- Web 核心備援方案：直接調用原生 JS ---
-      try {
-        final double pitch = (gender == 'female' ? 1.4 : 0.8);
-        final double rate = (gender == 'female' ? 1.1 : 0.9);
-        
-        js.context.callMethod('eval', ["""
-          (function() {
-            window.speechSynthesis.cancel();
-            var msg = new SpeechSynthesisUtterance();
-            msg.text = '$textToSpeak';
-            msg.lang = 'zh-TW';
-            msg.pitch = $pitch;
-            msg.rate = $rate;
-            msg.onend = function(event) {
-              // 此部分無法直接回傳 Dart，故配合 Dart 的 Timer
-            };
-            window.speechSynthesis.speak(msg);
-          })();
-        """]);
-
-        // Web 端手動設定一個估計的結束時間或讓使用者手動點擊停止
-        // 為簡單起見，我們先假設播放中
-      } catch (e) {
-        debugPrint("Web Native TTS Error: $e");
-        setState(() => _isPlaying = false);
-      }
-    } else {
-      // --- 非 Web 環境：使用插件 ---
-      try {
-        _initTts();
-        if (gender == 'female') {
-          await _flutterTts!.setPitch(1.2); 
-          await _flutterTts!.setSpeechRate(0.52);
-        } else {
-          await _flutterTts!.setPitch(0.85); 
-          await _flutterTts!.setSpeechRate(0.48);
-        }
-        await _flutterTts!.speak(textToSpeak);
-      } catch (e) {
-        debugPrint("Plugin TTS Error: $e");
-        setState(() => _isPlaying = false);
-      }
-    }
+    
+    // 使用全域 Provider 進行朗讀 / Use global provider
+    await ref.read(ttsProvider.notifier).speak(textToSpeak, gender: gender);
   }
 
   String _parseImageUrl(String url) {
@@ -170,7 +77,7 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> with WidgetsBin
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
-    _stopTts(); // 銷毀時安全停止所有語音 / Safely stop TTS on dispose
+    ref.read(ttsProvider.notifier).stop(); // 銷毀時安全停止所有語音 / Safely stop TTS on dispose
     super.dispose();
   }
 
@@ -267,7 +174,8 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> with WidgetsBin
     required IconData icon,
     required Color activeColor,
   }) {
-    final isCurrent = _isPlaying && _currentVoiceGender == gender;
+    final ttsState = ref.watch(ttsProvider);
+    final isCurrent = ttsState.isPlaying && ttsState.currentGender == gender;
     
     return GestureDetector(
       onTap: () => _toggleSpeak(gender),
