@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../providers/tts_provider.dart';
 
 class ActivityDetailPage extends ConsumerStatefulWidget {
@@ -21,6 +22,7 @@ class ActivityDetailPage extends ConsumerStatefulWidget {
   final String? content;
   final List<String>? imageUrls;
   final Map<String, String>? personalInfo;
+  final String? locationName;
 
   const ActivityDetailPage({
     super.key,
@@ -29,6 +31,7 @@ class ActivityDetailPage extends ConsumerStatefulWidget {
     this.content,
     this.imageUrls,
     this.personalInfo,
+    this.locationName,
   });
 
   @override
@@ -62,6 +65,24 @@ class _ActivityDetailPageState extends ConsumerState<ActivityDetailPage> with Wi
     await ref.read(ttsProvider.notifier).replay();
   }
 
+  Future<void> _openGoogleMaps() async {
+    final query = widget.locationName;
+    if (query == null || query.isEmpty) return;
+
+    final encodedQuery = Uri.encodeComponent(query);
+    final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$encodedQuery');
+
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('無法開啟 Google Maps')),
+        );
+      }
+    }
+  }
+
   String _parseImageUrl(String url) {
     if (url.startsWith('/')) {
       return 'http://43.103.3.57:8087$url';
@@ -92,6 +113,8 @@ class _ActivityDetailPageState extends ConsumerState<ActivityDetailPage> with Wi
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (widget.personalInfo != null) _buildPersonalInfoCard(context),
+                  if (widget.personalInfo != null) const SizedBox(height: 16),
+                  if (widget.locationName != null && widget.locationName!.isNotEmpty) _buildLocationCard(),
                   const SizedBox(height: 16),
                   _buildVoicePanel(),
                   const SizedBox(height: 24),
@@ -111,6 +134,56 @@ class _ActivityDetailPageState extends ConsumerState<ActivityDetailPage> with Wi
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLocationCard() {
+    return GestureDetector(
+      onTap: _openGoogleMaps,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.blueGrey.shade50,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.blueGrey.shade100),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(LucideIcons.mapPin, size: 18, color: Theme.of(context).primaryColor),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '地點與導航',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.blueGrey,
+                    ),
+                  ),
+                  Text(
+                    widget.locationName!,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(LucideIcons.externalLink, size: 20, color: Colors.blueGrey),
+          ],
+        ),
       ),
     );
   }

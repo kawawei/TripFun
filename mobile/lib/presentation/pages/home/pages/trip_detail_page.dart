@@ -318,6 +318,7 @@ class _TripDetailPageState extends ConsumerState<TripDetailPage> {
                         content: activity.content,
                         imageUrls: activity.imageUrls,
                         personalInfo: filteredInfo,
+                        locationName: activity.locationName,
                       ),
                   ),
                 );
