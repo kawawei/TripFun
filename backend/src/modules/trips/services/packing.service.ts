@@ -25,25 +25,35 @@ export class PackingService {
    * 獲取完整清單（包含特定使用者的勾選狀態）
    */
   async getPackingList(userId: string, tripId?: string) {
-    // 獲取所有項目 (包括系統預設與該行程的自定義項目)
+    // ========================================
+    // 只取手動新增的項目（依 trip_id 篩選，不使用系統預設清單）
+    // Only fetch manually added items by trip_id, no default seed data
+    // ========================================
+    const whereClause = tripId ? { trip_id: tripId } : {};
     const items = await this.itemRepository.find({
-      where: [
-        { is_custom: false },
-        { trip_id: tripId },
-      ],
-      order: { category: 'ASC', created_at: 'ASC' }
+      where: whereClause,
+      order: { category: 'ASC', created_at: 'ASC' },
     });
 
-    // 獲取使用者的核取狀態
-    const statuses = await this.statusRepository.find({
-      where: { user_id: userId, trip_id: tripId }
-    });
+    if (items.length === 0) return [];
 
-    const statusMap = new Map(statuses.map(s => [s.item_id, s.is_checked]));
+    // 取得使用者的個別勾選狀態 / Fetch per-user check status
+    const itemIds = items.map((i) => i.id);
+    const statuses = await this.statusRepository
+      .createQueryBuilder('s')
+      .where('s.user_id = :userId', { userId })
+      .andWhere('s.item_id IN (:...itemIds)', { itemIds })
+      .getMany();
 
-    return items.map(item => ({
-      ...item,
-      isChecked: statusMap.get(item.id) || false
+    const statusMap = new Map(statuses.map((s) => [s.item_id, s.is_checked]));
+
+    return items.map((item) => ({
+      id: item.id,
+      title: item.title,
+      category: item.category,
+      is_custom: item.is_custom,
+      trip_id: item.trip_id,
+      isChecked: statusMap.get(item.id) ?? false,
     }));
   }
 
