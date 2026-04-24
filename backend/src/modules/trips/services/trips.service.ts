@@ -120,7 +120,7 @@ export class TripsService implements OnModuleInit {
   async findActivitiesByTripId(tripId: string): Promise<Activity[]> {
     return this.activityRepository.find({
       where: { trip_id: tripId },
-      order: { time: 'ASC' },
+      order: { sort_order: 'ASC', time: 'ASC' },
     });
   }
 
