@@ -12,19 +12,27 @@ import 'auth_provider.dart';
 
 final packingServiceProvider = Provider((ref) => PackingService());
 
-final packingListProvider = StateNotifierProvider<PackingListNotifier, List<PackingItem>>((ref) {
+class PackingState {
+  final List<PackingItem> items;
+  final bool isLoading;
+  const PackingState({this.items = const [], this.isLoading = true});
+}
+
+final packingListProvider = StateNotifierProvider<PackingListNotifier, PackingState>((ref) {
   final user = ref.watch(authProvider);
   return PackingListNotifier(ref, user?.id);
 });
 
-class PackingListNotifier extends StateNotifier<List<PackingItem>> {
+class PackingListNotifier extends StateNotifier<PackingState> {
   final Ref _ref;
   final String? _userId;
-  final String? _tripId = '44444444-4444-4444-4444-444444444444'; // 目前暫時寫死特定行程 ID
+  final String? _tripId = '44444444-4444-4444-4444-444444444444';
 
-  PackingListNotifier(this._ref, this._userId) : super([]) {
+  PackingListNotifier(this._ref, this._userId) : super(const PackingState()) {
     if (_userId != null) {
       fetchPackingList();
+    } else {
+      state = const PackingState(isLoading: false);
     }
   }
 
@@ -32,57 +40,40 @@ class PackingListNotifier extends StateNotifier<List<PackingItem>> {
 
   Future<void> fetchPackingList() async {
     if (_userId == null) return;
-    state = await _service.getPackingList(_userId, tripId: _tripId);
+    state = PackingState(items: state.items, isLoading: true);
+    final items = await _service.getPackingList(_userId, tripId: _tripId);
+    state = PackingState(items: items, isLoading: false);
   }
 
   Future<void> toggleItem(String id) async {
     if (_userId == null) return;
-    
-    // 先樂觀更新 UI / Optimistically update UI
-    final currentItem = state.firstWhere((item) => item.id == id);
+    final currentItem = state.items.firstWhere((item) => item.id == id);
     final newStatus = !currentItem.isChecked;
-    
-    state = [
-      for (final item in state)
-        if (item.id == id)
-          item.copyWith(isChecked: newStatus)
-        else
-          item,
-    ];
-
-    // 同步到後端 / Sync to backend
+    state = PackingState(isLoading: false, items: [
+      for (final item in state.items)
+        if (item.id == id) item.copyWith(isChecked: newStatus) else item,
+    ]);
     final success = await _service.toggleItemStatus(_userId, id, newStatus, tripId: _tripId);
     if (!success) {
-      // 如果失敗，回滾狀態 / Rollback on failure
-      state = [
-        for (final item in state)
-          if (item.id == id)
-            item.copyWith(isChecked: !newStatus)
-          else
-            item,
-      ];
+      state = PackingState(isLoading: false, items: [
+        for (final item in state.items)
+          if (item.id == id) item.copyWith(isChecked: !newStatus) else item,
+      ]);
     }
   }
 
   Future<void> addItem(String title, String category) async {
     if (_userId == null) return;
-    
-    final newItem = await _service.createItem(
-      title, 
-      category, 
-      tripId: _tripId, 
-      userId: _userId
-    );
-    
+    final newItem = await _service.createItem(title, category, tripId: _tripId, userId: _userId);
     if (newItem != null) {
-      state = [...state, newItem];
+      state = PackingState(isLoading: false, items: [...state.items, newItem]);
     }
   }
 
   Future<void> removeItem(String id) async {
     final success = await _service.deleteItem(id);
     if (success) {
-      state = state.where((item) => item.id != id).toList();
+      state = PackingState(isLoading: false, items: state.items.where((item) => item.id != id).toList());
     }
   }
 }

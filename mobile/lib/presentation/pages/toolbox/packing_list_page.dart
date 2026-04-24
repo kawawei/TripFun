@@ -40,7 +40,9 @@ class _PackingListPageState extends ConsumerState<PackingListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final packingItems = ref.watch(packingListProvider);
+    final packingState = ref.watch(packingListProvider);
+    final packingItems = packingState.items;
+    final isLoading = packingState.isLoading;
     final user = ref.watch(authProvider);
 
     // ========================================
@@ -77,17 +79,26 @@ class _PackingListPageState extends ConsumerState<PackingListPage> {
                 ),
               )
             // ========================================
+            // 載入中 / Loading
+            // ========================================
+            if (isLoading)
+              const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator()),
+              )
+            // ========================================
             // 空清單提示 / Empty state
             // ========================================
             else if (packingItems.isEmpty)
-              const SliverFillRemaining(
+              SliverFillRemaining(
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
-                      Text('正在載入清單...', style: TextStyle(color: AppColors.textSecondary)),
+                      Icon(LucideIcons.packageOpen, size: 56, color: AppColors.textSecondary.withValues(alpha: 0.4)),
+                      const SizedBox(height: 16),
+                      const Text('清單是空的', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
+                      const SizedBox(height: 8),
+                      const Text('點擊右下角按鈕新增行李項目', style: TextStyle(color: AppColors.textPlaceholder)),
                     ],
                   ),
                 ),
