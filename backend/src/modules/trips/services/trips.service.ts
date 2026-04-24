@@ -159,7 +159,7 @@ export class TripsService implements OnModuleInit {
         subtitle: '台北出發前往關島 (GUM) | Boeing 737 Max 8',
         type: 'FLIGHT',
         icon_name: 'plane',
-        sort_order: 1,
+        sort_order: 3,
         image_urls: ['/uploads/united-boeing-737-800-las UA166.avif'],
         personal_info: {
           '航段': 'TPE 往 GUM',
@@ -181,7 +181,7 @@ export class TripsService implements OnModuleInit {
         subtitle: '關島轉往夏威夷 (HNL) | Boeing 777-300ER',
         type: 'FLIGHT',
         icon_name: 'plane',
-        sort_order: 2,
+        sort_order: 5,
         image_urls: ['/uploads/aircraft-boeing-777-200 UA200.jpg'],
         personal_info: {
           '航段': 'GUM 往 HNL',
@@ -203,7 +203,7 @@ export class TripsService implements OnModuleInit {
         subtitle: '抵達洛杉磯國際機場 (LAX) | Boeing 777-222A',
         type: 'FLIGHT',
         icon_name: 'plane-landing',
-        sort_order: 3,
+        sort_order: 7,
         image_urls: ['/uploads/UA1169.jpg'],
         personal_info: {
           '航段': 'HNL 往 LAX',
@@ -215,6 +215,50 @@ export class TripsService implements OnModuleInit {
             'u2': { '旅客': 'Yungchin Wei', '座位': '29K' },
             'u3': { '旅客': 'Mingjung Chang', '座位': '29L' },
             'u4': { '旅客': 'Binghong Wei', '座位': '28K' }
+          }
+        }
+      },
+      {
+        trip_id: tripId,
+        time: '10:00 (5/1)',
+        title: '大韓航空 KE8016',
+        subtitle: '洛杉磯 (LAX) 飛往 首爾 (ICN) | Boeing 747-8',
+        type: 'FLIGHT',
+        icon_name: 'plane',
+        sort_order: 8,
+        image_urls: ['/uploads/KE 8016 Boeing 747-8.webp'],
+        personal_info: {
+          '航段': 'LAX 往 ICN',
+          '客機型號': 'Boeing 747-8',
+          '航班代碼': 'KE 8016',
+          '飛航時間': '12h 20m',
+          'users': {
+            'u1': { '旅客': 'Chuanchun Wei', '座位': '尚未劃位' },
+            'u2': { '旅客': 'Yungchin Wei', '座位': '尚未劃位' },
+            'u3': { '旅客': 'Mingjung Chang', '座位': '尚未劃位' },
+            'u4': { '旅客': 'Binghong Wei', '座位': '尚未劃位' }
+          }
+        }
+      },
+      {
+        trip_id: tripId,
+        time: '10:30 (5/3)',
+        title: '大韓航空 KE2021',
+        subtitle: '首爾 (ICN) 飛往 台北 (TPE) | Airbus A380',
+        type: 'FLIGHT',
+        icon_name: 'plane-landing',
+        sort_order: 10,
+        image_urls: ['/uploads/KE 2021 A380.jpg'],
+        personal_info: {
+          '航段': 'ICN 往 TPE',
+          '客機型號': 'Airbus A380',
+          '航班代碼': 'KE 2021',
+          '飛航時間': '2h 40m',
+          'users': {
+            'u1': { '旅客': 'Chuanchun Wei', '座位': '尚未劃位' },
+            'u2': { '旅客': 'Yungchin Wei', '座位': '尚未劃位' },
+            'u3': { '旅客': 'Mingjung Chang', '座位': '尚未劃位' },
+            'u4': { '旅客': 'Binghong Wei', '座位': '尚未劃位' }
           }
         }
       }
