@@ -2,8 +2,12 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TripsController } from './controllers/trips.controller';
 import { TripsService } from './services/trips.service';
+import { PackingController } from './controllers/packing.controller';
+import { PackingService } from './services/packing.service';
 import { Trip } from './entities/trip.entity';
 import { Activity } from './entities/activity.entity';
+import { PackingItem } from './entities/packing-item.entity';
+import { UserPackingStatus } from './entities/user-packing-status.entity';
 
 /**
  * @file trips.module.ts
@@ -14,10 +18,10 @@ import { Activity } from './entities/activity.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Trip, Activity]),
+    TypeOrmModule.forFeature([Trip, Activity, PackingItem, UserPackingStatus]),
   ],
-  controllers: [TripsController],
-  providers: [TripsService],
-  exports: [TripsService],
+  controllers: [TripsController, PackingController],
+  providers: [TripsService, PackingService],
+  exports: [TripsService, PackingService],
 })
 export class TripsModule {}
