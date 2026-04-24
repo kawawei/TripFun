@@ -74,37 +74,42 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> with WidgetsBin
   Future<void> _toggleSpeak(String gender) async {
     if (widget.content == null || widget.content!.isEmpty) return;
 
-    // 如果點擊目前播放中的聲音，則停止 / Stop if clicking same gender while playing
-    if (_isPlaying && _currentVoiceGender == gender) {
+    try {
+      // 如果點擊目前播放中的聲音，則停止 / Stop if clicking same gender while playing
+      if (_isPlaying && _currentVoiceGender == gender) {
+        await _flutterTts.stop();
+        setState(() => _isPlaying = false);
+        return;
+      }
+
+      // 先停止所有聲音，並加入安全性檢查 / Stop with safety check
       await _flutterTts.stop();
-      setState(() => _isPlaying = false);
-      return;
+
+      // 處理朗讀文字：避開訂單資訊，鎖定精彩亮點 / Filter text to speak
+      String textToSpeak = widget.content!;
+      if (textToSpeak.contains("--- 🌟 飯店亮點 (Highlights) ---")) {
+        textToSpeak = textToSpeak.split("--- 🌟 飯店亮點 (Highlights) ---").last;
+      }
+
+      // 設定音色 / Set Tone/Pitch
+      if (gender == 'female') {
+        await _flutterTts.setPitch(1.2); 
+        await _flutterTts.setSpeechRate(0.52);
+      } else {
+        await _flutterTts.setPitch(0.85); 
+        await _flutterTts.setSpeechRate(0.48);
+      }
+
+      setState(() {
+        _isPlaying = true;
+        _currentVoiceGender = gender;
+      });
+
+      await _flutterTts.speak(textToSpeak);
+    } catch (e) {
+      debugPrint("TTS Error: $e");
+      if (mounted) setState(() => _isPlaying = false);
     }
-
-    // 先停止所有聲音 / Stop current audio
-    await _flutterTts.stop();
-
-    // 處理朗讀文字：避開訂單資訊，鎖定精彩亮點 / Filter text to speak
-    String textToSpeak = widget.content!;
-    if (textToSpeak.contains("--- 🌟 飯店亮點 (Highlights) ---")) {
-      textToSpeak = textToSpeak.split("--- 🌟 飯店亮點 (Highlights) ---").last;
-    }
-
-    // 設定音色 / Set Tone/Pitch
-    if (gender == 'female') {
-      await _flutterTts.setPitch(1.2); // 女聲較清脆
-      await _flutterTts.setSpeechRate(0.52);
-    } else {
-      await _flutterTts.setPitch(0.85); // 男聲較沉穩
-      await _flutterTts.setSpeechRate(0.48);
-    }
-
-    setState(() {
-      _isPlaying = true;
-      _currentVoiceGender = gender;
-    });
-
-    await _flutterTts.speak(textToSpeak);
   }
 
   String _parseImageUrl(String url) {
