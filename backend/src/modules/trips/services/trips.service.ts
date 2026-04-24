@@ -129,6 +129,11 @@ export class TripsService implements OnModuleInit {
     return this.tripRepository.save(trip);
   }
 
+  async createActivity(activityData: Partial<Activity>): Promise<Activity> {
+    const activity = this.activityRepository.create(activityData);
+    return this.activityRepository.save(activity);
+  }
+
   /**
    * 更新活動 / Update activity
    * @param id 活動 ID

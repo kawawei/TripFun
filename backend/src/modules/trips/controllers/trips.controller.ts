@@ -20,6 +20,11 @@ export class TripsController {
     return this.tripsService.create(createTripDto);
   }
 
+  @Post(':id/activities')
+  async createActivity(@Param('id') trip_id: string, @Body() activityData: any) {
+    return this.tripsService.createActivity({ ...activityData, trip_id });
+  }
+
   @Post('activities/:id')
   async updateActivity(@Param('id') id: string, @Body() activityData: any) {
     return this.tripsService.updateActivity(id, activityData);
