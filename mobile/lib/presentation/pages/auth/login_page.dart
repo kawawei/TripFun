@@ -91,37 +91,60 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                          color: Colors.orange.withValues(alpha: 0.15),
+                          color: Colors.white.withValues(alpha: 0.8),
                           shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.orange.withValues(alpha: 0.3),
+                              blurRadius: 15,
+                              spreadRadius: 2,
+                            )
+                          ],
                         ),
                         child: const Icon(
                           LucideIcons.plane,
-                          size: 48,
-                          color: Colors.orange,
+                          size: 56,
+                          color: Colors.deepOrange,
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        'TripFun',
+                      const SizedBox(height: 32),
+                      // 漸層標題文字
+                      ShaderMask(
+                        shaderCallback: (bounds) => const LinearGradient(
+                          colors: [Colors.orange, Colors.deepOrange],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ).createShader(bounds),
+                        child: const Text(
+                          'TripFun',
+                          style: TextStyle(
+                            fontSize: 42,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            letterSpacing: 3.0,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black26,
+                                offset: Offset(0, 4),
+                                blurRadius: 10,
+                              )
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        '開啟您的美國專屬旅程',
                         style: TextStyle(
-                          fontSize: 36,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.black87,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87.withValues(alpha: 0.7),
                           letterSpacing: 2.0,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '開啟您的洛杉磯專屬旅程',
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: Colors.black.withValues(alpha: 0.6),
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 48),
+                      const SizedBox(height: 56),
                       // 身份選擇框
                       membersAsyncValue.when(
                         data: (members) {
