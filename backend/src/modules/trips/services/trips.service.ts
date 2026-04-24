@@ -76,7 +76,11 @@ export class TripsService implements OnModuleInit {
           subtitle: '開啟海島假期',
           type: 'ATTRACTION',
           icon_name: 'map-pin',
-          image_url: 'https://images.unsplash.com/photo-1544257750-572358f5da22?q=80&w=800',
+          image_urls: [
+            'https://images.unsplash.com/photo-1544257750-572358f5da22?q=80&w=800',
+            'https://images.unsplash.com/photo-1536431311719-398b6704d4cc?q=80&w=800',
+            'https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?q=80&w=800'
+          ],
         },
         {
           trip_id: laTrip.id,
@@ -85,7 +89,10 @@ export class TripsService implements OnModuleInit {
           subtitle: '享受正宗韓式料理',
           type: 'FOOD',
           icon_name: 'utensils',
-          image_url: 'https://images.unsplash.com/photo-159060451804e-ab90437452d3?q=80&w=800',
+          image_urls: [
+            'https://images.unsplash.com/photo-159060451804e-ab90437452d3?q=80&w=800',
+            'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?q=80&w=800'
+          ],
           personal_info: {
             '航空公司': '大韓航空',
             '日期': '5月1日',

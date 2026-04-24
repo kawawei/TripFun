@@ -53,8 +53,8 @@ export class Activity {
   @Column({ type: 'decimal', precision: 11, scale: 8, nullable: true })
   longitude: number;
 
-  @Column({ type: 'text', nullable: true })
-  image_url: string;
+  @Column({ type: 'jsonb', nullable: true })
+  image_urls: string[];
 
   @CreateDateColumn()
   created_at: Date;

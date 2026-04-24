@@ -12,19 +12,33 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-class ActivityDetailPage extends StatelessWidget {
+class ActivityDetailPage extends StatefulWidget {
   final String title;
   final String category;
-  final String? imageUrl;
+  final List<String>? imageUrls;
   final Map<String, String>? personalInfo;
 
   const ActivityDetailPage({
     super.key,
     required this.title,
     required this.category,
-    this.imageUrl,
+    this.imageUrls,
     this.personalInfo,
   });
+
+  @override
+  State<ActivityDetailPage> createState() => _ActivityDetailPageState();
+}
+
+class _ActivityDetailPageState extends State<ActivityDetailPage> {
+  int _currentPage = 0;
+  final PageController _pageController = PageController();
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +52,7 @@ class ActivityDetailPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (personalInfo != null) _buildPersonalInfoCard(context),
+                  if (widget.personalInfo != null) _buildPersonalInfoCard(context),
                   const SizedBox(height: 24),
                   _buildSectionTitle('詳細介紹'),
                   const SizedBox(height: 12),
@@ -61,6 +75,8 @@ class ActivityDetailPage extends StatelessWidget {
   }
 
   Widget _buildSliverAppBar(BuildContext context) {
+    final hasImages = widget.imageUrls != null && widget.imageUrls!.isNotEmpty;
+
     return SliverAppBar(
       expandedHeight: 300,
       pinned: true,
@@ -69,16 +85,24 @@ class ActivityDetailPage extends StatelessWidget {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            // 背景圖片 / Background Image
-            if (imageUrl != null && imageUrl!.startsWith('http'))
-              CachedNetworkImage(
-                imageUrl: imageUrl!,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Container(color: Colors.grey.shade200),
-                errorWidget: (context, url, error) => _buildPlaceholder(),
+            // 背景圖片輪播 / Background Image Slider
+            if (hasImages)
+              PageView.builder(
+                controller: _pageController,
+                onPageChanged: (index) => setState(() => _currentPage = index),
+                itemCount: widget.imageUrls!.length,
+                itemBuilder: (context, index) {
+                  return CachedNetworkImage(
+                    imageUrl: widget.imageUrls![index],
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(color: Colors.grey.shade200),
+                    errorWidget: (context, url, error) => _buildPlaceholder(),
+                  );
+                },
               )
             else
               _buildPlaceholder(),
+            
             // 漸層遮罩 / Gradient overlay
             const DecoratedBox(
               decoration: BoxDecoration(
@@ -89,9 +113,32 @@ class ActivityDetailPage extends StatelessWidget {
                 ),
               ),
             ),
+
+            // 頁碼指示器 / Page Indicator
+            if (hasImages && widget.imageUrls!.length > 1)
+              Positioned(
+                bottom: 60,
+                left: 0,
+                right: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    widget.imageUrls!.length,
+                    (index) => Container(
+                      width: 8,
+                      height: 8,
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _currentPage == index ? Colors.white : Colors.white.withOpacity(0.4),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
-        title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(widget.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
     );
   }
@@ -125,7 +172,7 @@ class ActivityDetailPage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          ...personalInfo!.entries.map((e) => Padding(
+          ...widget.personalInfo!.entries.map((e) => Padding(
             padding: const EdgeInsets.only(bottom: 6),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
