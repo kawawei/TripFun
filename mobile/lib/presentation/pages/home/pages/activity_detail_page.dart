@@ -6,12 +6,10 @@
  */
 
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
-
-import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
 class ActivityDetailPage extends StatefulWidget {
   final String title;
@@ -33,9 +31,81 @@ class ActivityDetailPage extends StatefulWidget {
   State<ActivityDetailPage> createState() => _ActivityDetailPageState();
 }
 
-class _ActivityDetailPageState extends State<ActivityDetailPage> {
+class _ActivityDetailPageState extends State<ActivityDetailPage> with WidgetsBindingObserver {
   int _currentPage = 0;
   final PageController _pageController = PageController();
+  
+  // 語音組件 / TTS Components
+  final FlutterTts _flutterTts = FlutterTts();
+  bool _isPlaying = false;
+  String? _currentVoiceGender; // 'male' or 'female'
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _initTts();
+  }
+
+  void _initTts() async {
+    await _flutterTts.setLanguage("zh-TW");
+    await _flutterTts.setSpeechRate(0.5);
+    await _flutterTts.setVolume(1.0);
+    await _flutterTts.setPitch(1.0);
+
+    _flutterTts.setCompletionHandler(() {
+      if (mounted) setState(() => _isPlaying = false);
+    });
+
+    _flutterTts.setCancelHandler(() {
+      if (mounted) setState(() => _isPlaying = false);
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // 當 App 進入背景或暫停時，停止語音 / Stop TTS when app goes to background
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      _flutterTts.stop();
+      if (mounted) setState(() => _isPlaying = false);
+    }
+  }
+
+  Future<void> _toggleSpeak(String gender) async {
+    if (widget.content == null || widget.content!.isEmpty) return;
+
+    // 如果點擊目前播放中的聲音，則停止 / Stop if clicking same gender while playing
+    if (_isPlaying && _currentVoiceGender == gender) {
+      await _flutterTts.stop();
+      setState(() => _isPlaying = false);
+      return;
+    }
+
+    // 先停止所有聲音 / Stop current audio
+    await _flutterTts.stop();
+
+    // 處理朗讀文字：避開訂單資訊，鎖定精彩亮點 / Filter text to speak
+    String textToSpeak = widget.content!;
+    if (textToSpeak.contains("--- 🌟 飯店亮點 (Highlights) ---")) {
+      textToSpeak = textToSpeak.split("--- 🌟 飯店亮點 (Highlights) ---").last;
+    }
+
+    // 設定音色 / Set Tone/Pitch
+    if (gender == 'female') {
+      await _flutterTts.setPitch(1.2); // 女聲較清脆
+      await _flutterTts.setSpeechRate(0.52);
+    } else {
+      await _flutterTts.setPitch(0.85); // 男聲較沉穩
+      await _flutterTts.setSpeechRate(0.48);
+    }
+
+    setState(() {
+      _isPlaying = true;
+      _currentVoiceGender = gender;
+    });
+
+    await _flutterTts.speak(textToSpeak);
+  }
 
   String _parseImageUrl(String url) {
     if (url.startsWith('/')) {
@@ -46,7 +116,9 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
+    _flutterTts.stop(); // 銷毀時停止所有語音
     super.dispose();
   }
 
@@ -65,6 +137,8 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
                 children: [
                   if (widget.personalInfo != null) _buildPersonalInfoCard(context),
                   const SizedBox(height: 24),
+                  _buildVoiceGuideSection(),
+                  const SizedBox(height: 12),
                   _buildSectionTitle('詳細介紹'),
                   const SizedBox(height: 12),
                   Text(
@@ -81,6 +155,102 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildVoiceGuideSection() {
+    final themeColor = Theme.of(context).primaryColor;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+        border: Border.all(color: Colors.grey.shade100),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: themeColor.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(LucideIcons.mic2, color: themeColor, size: 18),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('AI 語音導覽', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                Text('為您朗讀景點亮點', style: TextStyle(color: Colors.grey, fontSize: 11)),
+              ],
+            ),
+          ),
+          _buildVoiceButton(
+            label: '優雅女聲',
+            gender: 'female',
+            icon: LucideIcons.user,
+            activeColor: Colors.pink.shade400,
+          ),
+          const SizedBox(width: 8),
+          _buildVoiceButton(
+            label: '穩重男聲',
+            gender: 'male',
+            icon: LucideIcons.userCheck,
+            activeColor: Colors.blue.shade600,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVoiceButton({
+    required String label,
+    required String gender,
+    required IconData icon,
+    required Color activeColor,
+  }) {
+    final isCurrent = _isPlaying && _currentVoiceGender == gender;
+    
+    return GestureDetector(
+      onTap: () => _toggleSpeak(gender),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isCurrent ? activeColor : activeColor.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(25),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isCurrent)
+              const Padding(
+                padding: EdgeInsets.only(right: 6),
+                child: SizedBox(
+                  width: 10,
+                  height: 10,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                ),
+              )
+            else
+              Icon(icon, size: 14, color: activeColor),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isCurrent ? Colors.white : activeColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
