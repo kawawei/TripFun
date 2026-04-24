@@ -278,3 +278,39 @@
   - `docker ps` 確認容器正常綁定新的 Volume，再次上傳的圖片永久存續，前端順利抓取並渲染成功。
 
 紀錄時間：23:15
+
+### Flutter Web 瀏覽器拖曳失效 (Web Drag Interaction Frozen)
+- **問題描述 (Issue)**: 
+  - 場景：在 Web 畫廊中試圖使用滑鼠拖曳橫向切換照片時毫無反應，只能透過點擊點點。
+- **原因分析**:
+  - Flutter 引擎於較新版本為了細分裝置行為，預設不再將滑鼠指標 (`PointerDeviceKind.mouse`) 的拖曳視為觸控螢幕的位移，導致 `PageView` 或 `CustomScrollView` 忽略滑鼠拖曳。
+- **解決方案 (Solution)**:
+  - 於 `PageView` 中注入專屬的 `ScrollBehavior`，在 `dragDevices` 集合中明確加入 `PointerDeviceKind.mouse` 與 `PointerDeviceKind.trackpad`，恢復滑鼠平移功能。
+- **驗證結果**:
+  - 滑鼠可直接按住平移切換相片。
+
+紀錄時間：00:08
+
+### 終端機與 Console 日誌洗版卡頓 (Terminal & Console Flooding)
+- **問題描述 (Issue)**: 
+  - 場景：改用 `StreamProvider` 實作每 3 秒背景自動輪詢後，開發終端機 (Terminal) 與 Chrome Console 瘋狂印出整個 API 回傳的超長 JSON 陣列，甚至造成卡頓崩潰假象。
+- **原因分析**:
+  - 全域的 Dio 被配置了 `LogInterceptor(responseBody: true)`。這原本用於單次拉取時方便除錯，但在每 3 秒自動拉取的輪詢架構下，反而變成毒藥，不斷產生大量 Print I/O 輸出。
+- **解決方案 (Solution)**:
+  - 在 `dio_provider.dart` 中將 `LogInterceptor` 的 `requestBody`、`responseBody` 和標頭相關印出選項皆設定為 `false`。
+- **驗證結果**:
+  - API 持續背景靜默拉取並更新 UI，但終端機完全保持清爽不再洗版。
+
+紀錄時間：00:08
+
+### Flutter 編譯錯誤：括號封閉遺漏 (Compilation Error: Missing Closing Parenthesis)
+- **問題描述 (Issue)**: 
+  - 場景：為畫廊加入全螢幕縮放時，控制台報錯 `Error: Can't find ')' to match '('` 且無法執行。
+- **原因分析**:
+  - 手動重構 Widget Tree，使用 `GestureDetector` 包覆 `CachedNetworkImage` 時，誤將內層的結束括號刪除，造成編譯器的語法樹解析失敗。
+- **解決方案 (Solution)**:
+  - 重新補上對稱的 `),` 在 `CachedNetworkImage` 的尾部，並補齊 `GestureDetector` 的 `);`。
+- **驗證結果**:
+  - Hot Reload 成功，編譯器恢復正常運作。
+
+紀錄時間：00:08
