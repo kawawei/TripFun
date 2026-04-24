@@ -226,6 +226,7 @@ class TripDetailPage extends ConsumerWidget {
                       builder: (context) => ActivityDetailPage(
                         title: activity.title,
                         category: activity.type,
+                        content: activity.content,
                         imageUrls: activity.imageUrls,
                         personalInfo: activity.personalInfo?.map((k, v) => MapEntry(k, v.toString())),
                       ),

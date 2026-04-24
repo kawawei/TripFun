@@ -15,6 +15,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 class ActivityDetailPage extends StatefulWidget {
   final String title;
   final String category;
+  final String? content;
   final List<String>? imageUrls;
   final Map<String, String>? personalInfo;
 
@@ -22,6 +23,7 @@ class ActivityDetailPage extends StatefulWidget {
     super.key,
     required this.title,
     required this.category,
+    this.content,
     this.imageUrls,
     this.personalInfo,
   });
@@ -56,9 +58,9 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
                   const SizedBox(height: 24),
                   _buildSectionTitle('詳細介紹'),
                   const SizedBox(height: 12),
-                  const Text(
-                    '這裡是洛杉磯最具代表性的地點之一。無論是歷史悠久的建築風格，還是其在全球文化中的獨特性，都吸引了無數遊客。在這裡你可以感受到時光的流轉與現代商業的融合。',
-                    style: TextStyle(fontSize: 16, height: 1.6, color: Colors.black87),
+                  Text(
+                    widget.content ?? '暫無詳細介紹',
+                    style: const TextStyle(fontSize: 16, height: 1.6, color: Colors.black87),
                   ),
                   const SizedBox(height: 32),
                   _buildSectionTitle('周邊景點與美食'),
@@ -75,13 +77,17 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
   }
 
   Widget _buildSliverAppBar(BuildContext context) {
-    final hasImages = widget.imageUrls != null && widget.imageUrls!.isNotEmpty;
+    final List<String> images = widget.imageUrls ?? [];
+    final bool hasImages = images.isNotEmpty;
 
     return SliverAppBar(
       expandedHeight: 300,
       pinned: true,
+      elevation: 0,
+      backgroundColor: Theme.of(context).primaryColor,
       iconTheme: const IconThemeData(color: Colors.white),
       flexibleSpace: FlexibleSpaceBar(
+        collapseMode: CollapseMode.pin,
         background: Stack(
           fit: StackFit.expand,
           children: [
@@ -90,13 +96,22 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
               PageView.builder(
                 controller: _pageController,
                 onPageChanged: (index) => setState(() => _currentPage = index),
-                itemCount: widget.imageUrls!.length,
+                itemCount: images.length,
                 itemBuilder: (context, index) {
+                  final url = images[index];
                   return CachedNetworkImage(
-                    imageUrl: widget.imageUrls![index],
+                    imageUrl: url,
                     fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(color: Colors.grey.shade200),
-                    errorWidget: (context, url, error) => _buildPlaceholder(),
+                    fadeOutDuration: const Duration(milliseconds: 300),
+                    fadeInDuration: const Duration(milliseconds: 500),
+                    placeholder: (context, url) => Container(
+                      color: Colors.grey.shade200,
+                      child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    ),
+                    errorWidget: (context, url, error) {
+                      print('Image load error: $url - $error');
+                      return _buildPlaceholder();
+                    },
                   );
                 },
               )
@@ -109,27 +124,33 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.black26, Colors.transparent, Colors.black54],
+                  stops: [0.0, 0.4, 1.0],
+                  colors: [
+                    Colors.black38,
+                    Colors.transparent,
+                    Colors.black87,
+                  ],
                 ),
               ),
             ),
 
             // 頁碼指示器 / Page Indicator
-            if (hasImages && widget.imageUrls!.length > 1)
+            if (hasImages && images.length > 1)
               Positioned(
-                bottom: 60,
+                bottom: 25,
                 left: 0,
                 right: 0,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(
-                    widget.imageUrls!.length,
-                    (index) => Container(
-                      width: 8,
+                    images.length,
+                    (index) => AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      width: _currentPage == index ? 20 : 8,
                       height: 8,
                       margin: const EdgeInsets.symmetric(horizontal: 4),
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
+                        borderRadius: BorderRadius.circular(4),
                         color: _currentPage == index ? Colors.white : Colors.white.withOpacity(0.4),
                       ),
                     ),
@@ -138,7 +159,8 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
               ),
           ],
         ),
-        title: Text(widget.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(widget.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+        titlePadding: const EdgeInsetsDirectional.only(start: 50, bottom: 16),
       ),
     );
   }
