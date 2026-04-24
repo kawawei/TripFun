@@ -1,0 +1,96 @@
+# ================================================================
+# @file compose.yaml (prod)
+# @description 伺服器生產環境容器編排 / Server production container orchestration
+# @description_zh 映射至伺服器統一分配之端口，避開 43.103.3.57 上其他專案占用的端口
+# @description_en Maps to server-allocated ports avoiding conflicts on 43.103.3.57
+#
+# 端口規劃 / Port Allocation:
+#   前端 Flutter Web : Host 89  -> Container 80
+#   後端 NestJS API  : Host 8087 -> Container 3000
+#   PostgreSQL       : Host 5438 -> Container 5432
+#   Redis            : Host 6385 -> Container 6379
+# ================================================================
+
+name: tripfun
+
+services:
+  # ------------------------------------------------
+  # 1. 後端核心 (NestJS) / Backend Core
+  # ------------------------------------------------
+  backend:
+    container_name: tripfun-backend
+    build:
+      context: ../../backend
+      dockerfile: docker/prod/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_HOST_PORT:-8087}:3000"
+    env_file:
+      - ../../env/prod/.env
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=tripfun-db
+      - REDIS_HOST=tripfun-redis
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/v1/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - tripfun-network
+
+  # ------------------------------------------------
+  # 2. 資料庫 (PostgreSQL) / Database
+  # ------------------------------------------------
+  db:
+    container_name: tripfun-db
+    image: postgres:16-alpine
+    restart: unless-stopped
+    ports:
+      - "${DB_HOST_PORT:-5438}:5432"
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - tripfun-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - tripfun-network
+
+  # ------------------------------------------------
+  # 3. 緩存 (Redis) / Cache
+  # ------------------------------------------------
+  redis:
+    container_name: tripfun-redis
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "${REDIS_HOST_PORT:-6385}:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tripfun-network
+
+networks:
+  tripfun-network:
+    driver: bridge
+
+volumes:
+  tripfun-db-data:
+    driver: local
