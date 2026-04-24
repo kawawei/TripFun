@@ -134,6 +134,15 @@ export class TripsService implements OnModuleInit {
     return this.activityRepository.save(activity);
   }
 
+  async findOne(id: string): Promise<Trip> {
+    return this.tripRepository.findOne({ where: { id } });
+  }
+
+  async updateMembers(id: string, members: any[]): Promise<Trip> {
+    await this.tripRepository.update(id, { members });
+    return this.findOne(id);
+  }
+
   /**
    * 更新活動 / Update activity
    * @param id 活動 ID

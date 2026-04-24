@@ -39,6 +39,9 @@ export class Trip {
   @Column({ length: 50, nullable: true })
   owner_id: string;
 
+  @Column({ type: 'jsonb', nullable: true, default: [] })
+  members: any;
+
   @Column({ length: 20, default: 'ACTIVE' })
   status: string;
 

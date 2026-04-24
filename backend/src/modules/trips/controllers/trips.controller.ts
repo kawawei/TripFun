@@ -17,13 +17,17 @@ export class TripsController {
 
   @Get(':id/members')
   async findMembers(@Param('id') id: string) {
-    // 回傳預設的成員名單 (未來可接資料庫 user 表)
-    return [
-      { id: 'u1', name: 'Kawa' },
-      { id: 'u2', name: 'Kelly' },
-      { id: 'u3', name: 'Amber' },
-      { id: 'u4', name: 'Vivian' },
-    ];
+    const trip = await this.tripsService.findOne(id);
+    if (trip && trip.members && trip.members.length > 0) {
+      return trip.members;
+    }
+    // 回傳空的或初始的以免出錯
+    return [];
+  }
+
+  @Post(':id/members')
+  async updateMembers(@Param('id') id: string, @Body() membersData: any[]) {
+    return this.tripsService.updateMembers(id, membersData);
   }
 
   @Post()
