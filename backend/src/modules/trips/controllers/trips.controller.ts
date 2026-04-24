@@ -15,6 +15,17 @@ export class TripsController {
     return this.tripsService.findActivitiesByTripId(id);
   }
 
+  @Get(':id/members')
+  async findMembers(@Param('id') id: string) {
+    // 回傳預設的成員名單 (未來可接資料庫 user 表)
+    return [
+      { id: 'u1', name: 'Kawa' },
+      { id: 'u2', name: 'Kelly' },
+      { id: 'u3', name: 'Amber' },
+      { id: 'u4', name: 'Vivian' },
+    ];
+  }
+
   @Post()
   async create(@Body() createTripDto: any) {
     return this.tripsService.create(createTripDto);
