@@ -265,3 +265,16 @@
   - 畫面不再停留在洛杉磯卡片，重新載入後可正確渲染並解碼圖片。
 
 紀錄時間：23:14
+
+### 後端圖片上傳：容器重建導致上傳檔案遺失與 HTTP 404 (Docker: Uploaded Files Lost on Recreate)
+- **問題描述 (Issue)**:
+  - 場景：執行 `docker compose up -d --build --force-recreate` 部署後，原本成功上傳的圖片遇到 `HTTP 404 (Not Found)` 錯誤。
+- **原因分析**:
+  - **Docker 容器生命週期特性**：NestJS 後端的靜態目錄 (`/app/uploads`) 並沒有被對應到外部磁碟 (Volume)。當容器透過 `--force-recreate` 重新建立時，舊容器內的檔案會隨之銷毀，導致上傳檔案遺失。
+- **解決方案 (Solution)**:
+  - **新增持久化掛載 (Volume)**：在 `docker/prod/compose.yaml` 中替 `backend` 新增 volume 參照，映射 `tripfun-backend-uploads:/app/uploads`，保護圖片資料不隨容器重置消失。
+  - **重新綁定數據**：執行 `docker compose up` 載入含有 Volume 的配置後，重新上傳圖片並透過 API (`PATCH /activities/:id`) 覆寫關聯資料。
+- **驗證結果**:
+  - `docker ps` 確認容器正常綁定新的 Volume，再次上傳的圖片永久存續，前端順利抓取並渲染成功。
+
+紀錄時間：23:15
