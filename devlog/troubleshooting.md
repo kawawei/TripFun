@@ -540,4 +540,15 @@
   - 在終端機 (dartvm) 點按 `q` 完整結束當前的 `flutter run` 行程。
   - 重新執行 `flutter run -d chrome --web-port 3000`，讓 Flutter 重新產生乾淨且正確的 plugin registrant 即可恢復正常。
 
-紀錄時間：05:41
+### Android Release 版無法連線 (Cleartext HTTP Traffic Blocked)
+- **問題描述 (Issue)**:
+  - 產出的 APK 裝在實體手機上，開啟後發送 Dio API 請求失敗，無法載入行程與使用者（但在 Debug 或 Chrome 執行時正常）。
+- **原因分析**:
+  - 第一：Android 9+ 預設封鎖明碼傳輸 (`Cleartext HTTP`)，而目前的測試伺服器仍使用 `http://43.103.3.57:8087`。
+  - 第二：Flutter 在 Release 打包時不會預設包含網際網路權限 (`android.permission.INTERNET`)，導致正式包變成無網路狀態。
+- **解決方案 (Solution)**:
+  - 在 `mobile/android/app/src/main/AndroidManifest.xml` 中手動加入 `<uses-permission android:name="android.permission.INTERNET" />` 權限宣告。
+  - 在同檔案的 `<application>` 標籤內補上 `android:usesCleartextTraffic="true"` 以允許 HTTP 開發測試連線。
+  - 重新打包安裝即可順利抓取 API。
+
+紀錄時間：05:49
