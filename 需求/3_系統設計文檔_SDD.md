@@ -456,6 +456,7 @@ async checkPermission(userId: string, tripId: string) { ... }
 *   **參數**: `id` (Trip UUID)
 *   **請求體**: `Partial<TripEntity>`
     - 例如更新人數：`{ "memberCount": 4 }`
+    - 例如封存行程：`{ "status": "ARCHIVED" }`
 *   **回應 (200)**: 更新後的 `TripEntity`
 
 #### [DELETE] /trips/:id
@@ -471,19 +472,6 @@ async checkPermission(userId: string, tripId: string) { ... }
 *   **說明**: 獲取特定行程的所有活動清單（通常依 `sort_order` 或 `time` 排序）。
 *   **參數**: `id` (Trip UUID)
 *   **回應 (200)**: `ActivityEntity[]`
-    ```json
-    [
-      {
-        "id": "activity-uuid",
-        "tripId": "trip-uuid",
-        "time": "09:00",
-        "title": "成田機場接機",
-        "type": "TRANSPORT",
-        "iconName": "plane-landing",
-        "personalInfo": { "flightNo": "BR198" }
-      }
-    ]
-    ```
 
 #### [POST] /activities
 *   **說明**: 在行程中新增一項活動。
@@ -493,8 +481,12 @@ async checkPermission(userId: string, tripId: string) { ... }
       "tripId": "uuid",
       "time": "14:30",
       "title": "淺草寺參拜",
+      "subtitle": "雷門大燈籠拍照",
       "type": "ATTRACTION",
-      "iconName": "map-pin"
+      "iconName": "map-pin",
+      "location_name": "淺草寺",
+      "latitude": 35.7147,
+      "longitude": 139.7967
     }
     ```
 *   **回應 (201)**: `ActivityEntity`
@@ -503,6 +495,8 @@ async checkPermission(userId: string, tripId: string) { ... }
 *   **說明**: 修改活動詳情。
 *   **參數**: `id` (Activity UUID)
 *   **請求體**: `Partial<ActivityEntity>`
+    - 例如更換時間：`{ "time": "10:30" }`
+    - 例如更新排序：`{ "sort_order": 5 }`
 *   **回應 (200)**: 更新後的 `ActivityEntity`
 
 #### [DELETE] /activities/:id
@@ -512,23 +506,70 @@ async checkPermission(userId: string, tripId: string) { ... }
 
 ---
 
+### 14.3 成員與權限管理 (Members & Permissions)
+
+#### [POST] /trips/:id/members
+*   **說明**: 透過分享連結或手動邀請加入新成員。
+*   **請求體**: `{ "userId": "uuid", "role": "MEMBER" }`
+*   **回應 (201)**: 更新後的成員列表。
+
+#### [PATCH] /trips/:id/members/:userId
+*   **說明**: 修改成員角色（例如將 MEMBER 提升為 ADMIN）。
+*   **請求體**: `{ "role": "ADMIN" }`
+*   **回應 (200)**: 更新後的成員資訊。
+
+---
+
+### 14.4 記帳與開銷管理 (Expense Management)
+
+#### [POST] /expenses
+*   **說明**: 記錄一筆新的旅遊開銷。
+*   **請求體**: 
+    ```json
+    {
+      "tripId": "uuid",
+      "amount": 5000,
+      "currency": "JPY",
+      "category": "FOOD",
+      "payee": "敘敘苑燒肉",
+      "exchange_rate": 0.21
+    }
+    ```
+*   **回應 (201)**: `ExpenseEntity`
+
+---
+
 ## 15. 數據更正與維運指令 (Maintenance & Manual Data Correction)
 
 在測試環境或緊急維護時，可透過 Docker 執行資料庫指令更新數據。
 
 ### 15.1 更新旅客數量 (Manual MemberCount Update)
-當需要手動修正特定行程的旅客數量時：
-
 ```bash
-# 連線至伺服器並執行 psql 命令
+# 更新特定行程人數
 ssh root@43.103.3.57 "docker exec -i tripfun-db psql -U tripfun_user -d tripfun_db -c \"UPDATE trips SET \\\"memberCount\\\" = 4 WHERE id = 'TRIP_UUID';\""
 ```
 
-> **注意**: 在 PostgreSQL 中，若欄位名包含大寫（如 `memberCount`），必須使用雙引號引起來且需跳脫處理。
-
-### 15.2 清理測試數據 (Clear Seed Data)
-若需觸發 `TripsService` 的 `onModuleInit` 重新生成測試數據：
+### 15.2 修改活動時間與排序 (Activity Adjustment)
+當活動順序混亂或需批次修改時間時：
 
 ```bash
-docker exec -it tripfun-db psql -U tripfun_user -d tripfun_db -c "TRUNCATE table activities CASCADE; TRUNCATE table trips CASCADE;"
+# 修改特定活動的時間顯示
+docker exec -i tripfun-db psql -U tripfun_user -d tripfun_db -c "UPDATE activities SET time = '11:00' WHERE id = 'ACTIVITY_UUID';"
+
+# 設定活動排序值
+docker exec -i tripfun-db psql -U tripfun_user -d tripfun_db -c "UPDATE activities SET sort_order = 10 WHERE title LIKE '%接機%';"
+```
+
+### 15.3 成員權限手工變更 (Member Privilege Correction)
+若建立者不小心移除自己或需緊急提升管理員：
+
+```bash
+# 將指定用戶設為該行程擁有人 (OWNER)
+docker exec -i tripfun-db psql -U tripfun_user -d tripfun_db -c "UPDATE trip_members SET role = 'OWNER' WHERE trip_id = 'TRIP_ID' AND user_id = 'USER_ID';"
+```
+
+### 15.4 清理與重置數據 (System Reset)
+```bash
+# 清空所有業務數據 (保留用戶表)
+docker exec -it tripfun-db psql -U tripfun_user -d tripfun_db -c "TRUNCATE table activities, expenses, trip_members, trips CASCADE;"
 ```
