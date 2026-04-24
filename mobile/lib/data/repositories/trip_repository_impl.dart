@@ -48,6 +48,9 @@ class TripRepositoryImpl implements TripRepository {
         'location': trip.location,
         'startDate': trip.startDate.toIso8601String(),
         'endDate': trip.endDate.toIso8601String(),
+        'memberCount': trip.memberCount,
+        'status': trip.status,
+        'icon_name': trip.iconName ?? 'map',
       });
       return TripDto.fromJson(response.data).toEntity();
     } catch (e) {

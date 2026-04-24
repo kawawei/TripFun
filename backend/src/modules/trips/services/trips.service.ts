@@ -33,7 +33,7 @@ export class TripsService implements OnModuleInit {
         location: '關島 & 首爾',
         startDate: new Date('2026-04-25T11:00:00Z'),
         endDate: new Date('2026-05-03T12:00:00Z'),
-        memberCount: 1,
+        memberCount: 4,
         icon_name: 'plane',
         color_value: 0xFF10b981,
         status: 'ACTIVE',
