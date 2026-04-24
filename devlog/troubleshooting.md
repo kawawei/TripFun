@@ -249,3 +249,19 @@
   - 成功安裝 `multer`、`@nestjs/serve-static` 及 `@nestjs/platform-express`，後端編譯正常。
 
 紀錄時間：22:47
+
+### Flutter Web 圖片載入錯誤：CORS 編碼拒絕與熱重載失效 (Web: Image Encoding Error & Hot Reload Freeze)
+- **問題描述 (Issue)**:
+  - 場景：活動詳情頁面渲染多圖時，未能顯示圖片並呈現卡死狀態。
+  - 錯誤訊息：`Image load error: http://43.103.3.57:8087/uploads/... - EncodingError: The source image cannot be decoded.` 以及終端機顯示 `Exception: Const class cannot remove fields: ActivityDetailPage`。
+- **原因分析**:
+  - **CORS 編碼錯誤**：NestJS 的 `ServeStaticModule` 預設不帶跨網域 (CORS) 標頭，導致 Flutter Web 的 `CanvasKit` 引擎基於安全性原則拒絕解碼來自不同端口的靜態圖片。
+  - **熱重載失效**：將 `ActivityDetailPage` 將 `Stateless` 改為 `Stateful` 並且具有不同建構子參數時，Flutter Web 的熱重載直接崩潰，使得應用程式畫面停留在舊的狀態（寫死的「洛杉磯」內容）。
+- **解決方案 (Solution)**:
+  - **後端 CORS 配置**：在 `app.module.ts` 的 `ServeStaticModule.forRoot` 中新增 `serveStaticOptions`，設定 `setHeaders` 強制回應 `Access-Control-Allow-Origin: *`。
+  - **應用程式重啟**：重部署後端服務後，於 Flutter Web 開發終端機按 `Shift+R` (Hot Restart) 重置應用程式記憶體，或使用瀏覽器重新整理。
+- **驗證結果**:
+  - API 成功返回活動正確內容與圖片。
+  - 畫面不再停留在洛杉磯卡片，重新載入後可正確渲染並解碼圖片。
+
+紀錄時間：23:14
