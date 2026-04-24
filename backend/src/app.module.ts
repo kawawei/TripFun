@@ -38,6 +38,11 @@ import { join } from 'path';
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'uploads'),
       serveRoot: '/uploads',
+      serveStaticOptions: {
+        setHeaders: (res, path, stat) => {
+          res.set('Access-Control-Allow-Origin', '*');
+        },
+      },
     }),
     TripsModule,
     UploadModule,
