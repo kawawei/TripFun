@@ -99,26 +99,27 @@ class TtsNotifier extends StateNotifier<TtsState> {
 
       await stop(); // 先停止前一個
 
-      // 設定參數
+      // 設定參數 (全面對齊翻譯頁面之黃金比例 1.0) / Align with Translator's 1.0 settings
       if (gender == 'female') {
-        await _flutterTts.setPitch(1.1);
-        await _flutterTts.setSpeechRate(0.48);
+        await _flutterTts.setPitch(1.0);
+        await _flutterTts.setSpeechRate(1.0);
       } else if (gender == 'male') {
-        await _flutterTts.setPitch(0.85);
-        await _flutterTts.setSpeechRate(0.45);
+        await _flutterTts.setPitch(0.9); // 男聲微調音頻即可，維持語速
+        await _flutterTts.setSpeechRate(1.0);
       } else {
         await _flutterTts.setPitch(1.0);
-        await _flutterTts.setSpeechRate(0.5);
+        await _flutterTts.setSpeechRate(1.0);
       }
 
       state = state.copyWith(isPlaying: true, currentGender: gender);
 
-      // 分段處理長文本 / Split text for Web
+      // 分段處理長文本 (確保 Web 穩定讀完) / Split text for Web stability
       if (kIsWeb && text.length > 80) {
         List<String> chunks = _splitText(text);
         for (String chunk in chunks) {
           if (!state.isPlaying) break;
           await _flutterTts.speak(chunk);
+          // 在 Web 端，套件會自動處理隊列 / Plugin handles queue on Web
         }
       } else {
         await _flutterTts.speak(text);
