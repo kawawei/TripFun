@@ -305,7 +305,7 @@ class _TripDetailPageState extends ConsumerState<TripDetailPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      activity.time,
+                      activity.time.replaceAll(RegExp(r'\s*\(\d{1,2}/\d{1,2}\)'), ''),
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: primaryColor,
