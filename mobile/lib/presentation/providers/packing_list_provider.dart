@@ -32,7 +32,7 @@ class PackingListNotifier extends StateNotifier<List<PackingItem>> {
 
   Future<void> fetchPackingList() async {
     if (_userId == null) return;
-    state = await _service.getPackingList(_userId!, tripId: _tripId);
+    state = await _service.getPackingList(_userId, tripId: _tripId);
   }
 
   Future<void> toggleItem(String id) async {
@@ -51,7 +51,7 @@ class PackingListNotifier extends StateNotifier<List<PackingItem>> {
     ];
 
     // 同步到後端 / Sync to backend
-    final success = await _service.toggleItemStatus(_userId!, id, newStatus, tripId: _tripId);
+    final success = await _service.toggleItemStatus(_userId, id, newStatus, tripId: _tripId);
     if (!success) {
       // 如果失敗，回滾狀態 / Rollback on failure
       state = [

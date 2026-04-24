@@ -1,14 +1,15 @@
 /**
  * @file packing_list_page.dart
  * @description 行李打包清單頁面 / Packing list page
- * @description_zh 提供結構化的行李清單，支援核取、分類檢視與自定義新增功能
- * @description_en Provides a structured packing list with checkable items, categorized views, and custom item addition
+ * @description_zh 提供結構化的行李清單，串接後端 API，支援個人化勾選狀態、分類檢視與自定義新增功能
+ * @description_en Provides a structured packing list connected to backend API, with personalized check state, categorized views, and custom item addition
  */
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../providers/packing_list_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../../data/models/packing_item.dart';
 import '../../../core/constants/colors.dart';
 
@@ -29,51 +30,121 @@ class _PackingListPageState extends ConsumerState<PackingListPage> {
     super.dispose();
   }
 
+
+  // ========================================
+  // 下拉刷新 / Pull to refresh
+  // ========================================
+  Future<void> _onRefresh() async {
+    await ref.read(packingListProvider.notifier).fetchPackingList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final packingItems = ref.watch(packingListProvider);
-    
+    final user = ref.watch(authProvider);
+
+    // ========================================
     // 按類別分組 / Group by category
+    // ========================================
     final Map<String, List<PackingItem>> groupedItems = {};
     for (var item in packingItems) {
       groupedItems.putIfAbsent(item.category, () => []).add(item);
     }
-
     final categories = groupedItems.keys.toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        slivers: [
-          _buildAppBar(),
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-          for (var category in categories) ...[
-            _buildCategorySection(category, groupedItems[category]!),
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+      body: RefreshIndicator(
+        onRefresh: _onRefresh,
+        color: AppColors.primary,
+        child: CustomScrollView(
+          slivers: [
+            _buildAppBar(packingItems),
+            // ========================================
+            // 未登入提示 / Not logged in notice
+            // ========================================
+            if (user == null)
+              const SliverFillRemaining(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(LucideIcons.userX, size: 48, color: AppColors.textSecondary),
+                      SizedBox(height: 12),
+                      Text('請先選擇旅客身份', style: TextStyle(color: AppColors.textSecondary, fontSize: 16)),
+                    ],
+                  ),
+                ),
+              )
+            // ========================================
+            // 空清單提示 / Empty state
+            // ========================================
+            else if (packingItems.isEmpty)
+              const SliverFillRemaining(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text('正在載入清單...', style: TextStyle(color: AppColors.textSecondary)),
+                    ],
+                  ),
+                ),
+              )
+            else ...[
+              const SliverToBoxAdapter(child: SizedBox(height: 16)),
+              // ========================================
+              // 整體進度摘要 / Overall progress summary
+              // ========================================
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _buildOverallProgress(packingItems),
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 20)),
+              // ========================================
+              // 分類清單 / Category sections
+              // ========================================
+              for (var category in categories) ...[
+                _buildCategorySection(category, groupedItems[category]!),
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              ],
+              const SliverToBoxAdapter(child: SizedBox(height: 100)),
+            ],
           ],
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
-        ],
+        ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddItemDialog(context),
-        icon: const Icon(LucideIcons.plus),
-        label: const Text('新增項目'),
-      ),
+      floatingActionButton: user != null && packingItems.isNotEmpty
+          ? FloatingActionButton.extended(
+              onPressed: () => _showAddItemDialog(context),
+              icon: const Icon(LucideIcons.plus),
+              label: const Text('新增項目'),
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            )
+          : null,
     );
   }
 
-  Widget _buildAppBar() {
+  // ========================================
+  // AppBar 建構 / AppBar builder
+  // ========================================
+  Widget _buildAppBar(List<PackingItem> items) {
+    final checkedCount = items.where((i) => i.isChecked).length;
     return SliverAppBar(
       expandedHeight: 120.0,
       floating: false,
       pinned: true,
       centerTitle: true,
       flexibleSpace: FlexibleSpaceBar(
-        title: const Text(
-          '打包清單',
-          style: TextStyle(
+        title: Text(
+          items.isEmpty ? '打包清單' : '打包清單 ($checkedCount/${items.length})',
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             color: AppColors.textPrimary,
+            fontSize: 16,
           ),
         ),
         background: Container(
@@ -87,10 +158,69 @@ class _PackingListPageState extends ConsumerState<PackingListPage> {
     );
   }
 
-  Widget _buildCategorySection(String category, List<PackingItem> items) {
-    // 計算已選取比例 / Calculate progress
+  // ========================================
+  // 整體進度摘要卡片 / Overall progress card
+  // ========================================
+  Widget _buildOverallProgress(List<PackingItem> items) {
     final checkedCount = items.where((i) => i.isChecked).length;
-    final progress = items.isEmpty ? 0 : checkedCount / items.length;
+    final total = items.length;
+    final progress = total == 0 ? 0.0 : checkedCount / total;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: progress == 1.0
+              ? [const Color(0xFF10b981), const Color(0xFF059669)]
+              : [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            progress == 1.0 ? LucideIcons.checkCircle2 : LucideIcons.luggage,
+            color: Colors.white,
+            size: 36,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  progress == 1.0 ? '行李準備完畢！' : '行李準備進度',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: Colors.white.withValues(alpha: 0.3),
+                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                    minHeight: 8,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$checkedCount / $total 項已核取',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ========================================
+  // 分類區塊建構 / Category section builder
+  // ========================================
+  Widget _buildCategorySection(String category, List<PackingItem> items) {
+    final checkedCount = items.where((i) => i.isChecked).length;
+    final progress = items.isEmpty ? 0.0 : checkedCount / items.length;
 
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -104,33 +234,30 @@ class _PackingListPageState extends ConsumerState<PackingListPage> {
                 Text(
                   category,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: AppColors.primary,
                   ),
                 ),
                 Text(
                   '$checkedCount / ${items.length}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                  ),
+                  style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
-                value: progress.toDouble(),
+                value: progress,
                 backgroundColor: AppColors.border,
                 valueColor: AlwaysStoppedAnimation<Color>(
                   progress == 1.0 ? AppColors.success : AppColors.primary,
                 ),
-                minHeight: 6,
+                minHeight: 5,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -150,10 +277,7 @@ class _PackingListPageState extends ConsumerState<PackingListPage> {
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: items.length,
                 separatorBuilder: (context, index) => const Divider(
-                  height: 1,
-                  indent: 50,
-                  endIndent: 20,
-                  color: AppColors.divider,
+                  height: 1, indent: 50, endIndent: 20, color: AppColors.divider,
                 ),
                 itemBuilder: (context, index) {
                   final item = items[index];
@@ -163,14 +287,12 @@ class _PackingListPageState extends ConsumerState<PackingListPage> {
                       value: item.isChecked,
                       onChanged: (_) => ref.read(packingListProvider.notifier).toggleItem(item.id),
                       activeColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                     ),
                     title: Text(
                       item.title,
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 14,
                         color: item.isChecked ? AppColors.textSecondary : AppColors.textPrimary,
                         decoration: item.isChecked ? TextDecoration.lineThrough : null,
                       ),
@@ -192,7 +314,21 @@ class _PackingListPageState extends ConsumerState<PackingListPage> {
     );
   }
 
+  // ========================================
+  // 新增項目 Dialog / Add item dialog
+  // ========================================
   void _showAddItemDialog(BuildContext context) {
+    // 從現有清單取得所有已存在的類別
+    final existingCategories = ref
+        .read(packingListProvider)
+        .map((item) => item.category)
+        .toSet()
+        .toList();
+
+    if (!existingCategories.contains(_selectedCategory)) {
+      _selectedCategory = existingCategories.isNotEmpty ? existingCategories.first : '其他';
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -205,9 +341,7 @@ class _PackingListPageState extends ConsumerState<PackingListPage> {
           ),
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-            left: 20,
-            right: 20,
-            top: 20,
+            left: 20, right: 20, top: 20,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -233,40 +367,32 @@ class _PackingListPageState extends ConsumerState<PackingListPage> {
               Wrap(
                 spacing: 8,
                 runSpacing: 4,
-                children: [
-                  '重要證件與金流',
-                  '電子產品與配件',
-                  '個人衣物與穿戴',
-                  '盥洗物品',
-                  '其他',
-                ].map((cat) {
+                children: existingCategories.map((cat) {
                   final isSelected = _selectedCategory == cat;
                   return ChoiceChip(
-                    label: Text(cat),
+                    label: Text(cat, style: const TextStyle(fontSize: 12)),
                     selected: isSelected,
                     onSelected: (selected) {
-                      if (selected) {
-                        setModalState(() => _selectedCategory = cat);
-                      }
+                      if (selected) setModalState(() => _selectedCategory = cat);
                     },
                     selectedColor: AppColors.primary.withValues(alpha: 0.1),
                     labelStyle: TextStyle(
                       color: isSelected ? AppColors.primary : AppColors.textSecondary,
-                      fontSize: 12,
                     ),
                   );
                 }).toList(),
               ),
               const SizedBox(height: 24),
               FilledButton(
-                onPressed: () {
+                style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+                onPressed: () async {
                   if (_customItemController.text.isNotEmpty) {
-                    ref.read(packingListProvider.notifier).addItem(
+                    await ref.read(packingListProvider.notifier).addItem(
                       _customItemController.text,
                       _selectedCategory,
                     );
                     _customItemController.clear();
-                    Navigator.pop(context);
+                    if (context.mounted) Navigator.pop(context);
                   }
                 },
                 child: const Text('確認新增'),
