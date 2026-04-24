@@ -60,13 +60,16 @@ export class TripsService implements OnModuleInit {
           trip_id: laTrip.id,
           time: '11:00',
           title: '美國聯合航空 UA166',
-          subtitle: '起飛前往關島 (GUM)',
+          subtitle: '起飛前往關島 (GUM) | Boeing 737 Max 8',
           type: 'FLIGHT',
           icon_name: 'plane',
+          image_urls: ['/uploads/united-boeing-737-800-las UA166.avif'],
           personal_info: {
-            '航班編號': 'UA166',
+            '航班編號': 'UA 166',
             '航空公司': '美國聯合航空',
             '目的地': '關島',
+            '客機型號': 'Boeing 737 Max 8',
+            '飛航時間': '4h'
           },
         },
         {
@@ -140,57 +143,73 @@ export class TripsService implements OnModuleInit {
 
   async resetFlightActivities() {
     const tripId = '44444444-4444-4444-4444-444444444444';
-    // Remove old flight records
-    await this.activityRepository.delete({ trip_id: tripId, type: 'FLIGHT' });
+    // Remove old flight records specifically avoiding lounges
+    const flights = await this.activityRepository.find({ where: { trip_id: tripId, type: 'FLIGHT' } });
+    const flightIdsToRemove = flights.filter(f => f.title.includes('航空') || f.title.includes('班機')).map(f => f.id);
+    if (flightIdsToRemove.length > 0) {
+      await this.activityRepository.delete(flightIdsToRemove);
+    }
 
     // Seed personalized flights
     await this.activityRepository.save([
       {
         trip_id: tripId,
         time: '11:00',
-        title: '聯合航空 (TPE - GUM)',
-        subtitle: '台北出發，飛行約3小時45分',
+        title: '美國聯合航空 UA166',
+        subtitle: '台北出發前往關島 (GUM) | Boeing 737 Max 8',
         type: 'FLIGHT',
         icon_name: 'plane',
         sort_order: 1,
+        image_urls: ['/uploads/united-boeing-737-800-las UA166.avif'],
         personal_info: {
           '航段': 'TPE 往 GUM',
+          '客機型號': 'Boeing 737 Max 8',
+          '航班代碼': 'UA 166',
+          '飛航時間': '4h',
           'users': {
             'u1': { '旅客': 'Chuanchun Wei', '座位': '25F' },
-            'u2': { '旅客': 'Yungchin Wei', '座位': '24F' },
-            'u3': { '旅客': 'Mingjung Chang', '座位': '25E' },
-            'u4': { '旅客': 'Binghong Wei', '座位': '24E' }
+            'u2': { '旅客': 'Yungchin Wei', '座位': '24E' },
+            'u3': { '旅客': 'Mingjung Chang', '座位': '24F' },
+            'u4': { '旅客': 'Binghong Wei', '座位': '25E' }
           }
         }
       },
       {
         trip_id: tripId,
-        time: '18:00',
-        title: '聯合航空 (GUM - HNL)',
-        subtitle: '關島轉機前往夏威夷',
+        time: '07:05 (4/26)',
+        title: '美國聯合航空 UA200',
+        subtitle: '關島轉往夏威夷 (HNL) | Boeing 777-300ER',
         type: 'FLIGHT',
         icon_name: 'plane',
         sort_order: 2,
+        image_urls: ['/uploads/aircraft-boeing-777-200 UA200.jpg'],
         personal_info: {
           '航段': 'GUM 往 HNL',
+          '客機型號': 'Boeing 777-300ER',
+          '航班代碼': 'UA 200',
+          '飛航時間': '7h 5m',
           'users': {
             'u1': { '旅客': 'Chuanchun Wei', '座位': '39A' },
-            'u2': { '旅客': 'Yungchin Wei', '座位': '40A' },
-            'u3': { '旅客': 'Mingjung Chang', '座位': '40B' },
-            'u4': { '旅客': 'Binghong Wei', '座位': '39B' }
+            'u2': { '旅客': 'Yungchin Wei', '座位': '39B' },
+            'u3': { '旅客': 'Mingjung Chang', '座位': '40A' },
+            'u4': { '旅客': 'Binghong Wei', '座位': '40B' }
           }
         }
       },
       {
         trip_id: tripId,
-        time: '09:00 (4/26)',
-        title: '聯合航空 (HNL - LAX)',
-        subtitle: '抵達洛杉磯國際機場',
+        time: '21:40 (4/25)',
+        title: '美國聯合航空 UA1169',
+        subtitle: '抵達洛杉磯國際機場 (LAX) | Boeing 777-222A',
         type: 'FLIGHT',
         icon_name: 'plane-landing',
         sort_order: 3,
+        image_urls: ['/uploads/UA1169.jpg'],
         personal_info: {
           '航段': 'HNL 往 LAX',
+          '客機型號': 'Boeing 777-222A',
+          '航班代碼': 'UA 1169',
+          '飛航時間': '5h 27m',
           'users': {
             'u1': { '旅客': 'Chuanchun Wei', '座位': '28J' },
             'u2': { '旅客': 'Yungchin Wei', '座位': '29K' },
