@@ -11,14 +11,32 @@ import 'package:flutter_tts/flutter_tts.dart';
 
 class TtsState {
   final bool isPlaying;
-  final String? currentGender;
+  final bool isPaused;
+  final int currentIndex;
+  final List<String> chunks;
+  final String? currentText;
 
-  TtsState({this.isPlaying = false, this.currentGender});
+  TtsState({
+    this.isPlaying = false, 
+    this.isPaused = false,
+    this.currentIndex = 0,
+    this.chunks = const [],
+    this.currentText,
+  });
 
-  TtsState copyWith({bool? isPlaying, String? currentGender}) {
+  TtsState copyWith({
+    bool? isPlaying, 
+    bool? isPaused,
+    int? currentIndex,
+    List<String>? chunks,
+    String? currentText,
+  }) {
     return TtsState(
       isPlaying: isPlaying ?? this.isPlaying,
-      currentGender: currentGender ?? this.currentGender,
+      isPaused: isPaused ?? this.isPaused,
+      currentIndex: currentIndex ?? this.currentIndex,
+      chunks: chunks ?? this.chunks,
+      currentText: currentText ?? this.currentText,
     );
   }
 }
@@ -33,14 +51,14 @@ class TtsNotifier extends StateNotifier<TtsState> {
     if (_isInitialized) return;
     try {
       await _flutterTts.setLanguage("zh-TW");
-      await _flutterTts.setSpeechRate(0.5);
+      await _flutterTts.setSpeechRate(1.2); // 調整為 1.2 倍速
       await _flutterTts.setVolume(1.0);
       
       _flutterTts.setCompletionHandler(() {
-        state = state.copyWith(isPlaying: false);
-      });
-      _flutterTts.setCancelHandler(() {
-        state = state.copyWith(isPlaying: false);
+        // 全文本讀完時才關閉 Play 狀態
+        if (!state.isPaused && state.currentIndex >= state.chunks.length - 1) {
+          state = state.copyWith(isPlaying: false, currentIndex: 0);
+        }
       });
       _isInitialized = true;
     } catch (e) {
@@ -48,66 +66,97 @@ class TtsNotifier extends StateNotifier<TtsState> {
     }
   }
 
-  Future<void> speak(String text, {String? gender, String languageCode = 'zh-TW'}) async {
+  Future<void> togglePlay(String text) async {
     if (text.isEmpty) return;
     await _ensureInitialized();
 
-    try {
-      // 獲取高品質語音 (省略部分重複邏輯以節省篇幅)
-      final dynamic voices = await _flutterTts.getVoices;
-      if (voices != null && voices is List && voices.isNotEmpty) {
-        final targetVoices = voices.where((v) => v['locale']?.toString().toLowerCase().contains(languageCode.toLowerCase().replaceAll('-', '_')) ?? false).toList();
-        if (targetVoices.isNotEmpty) {
-          dynamic selected = targetVoices.firstWhere(
-            (v) => v['name']?.toString().toLowerCase().contains(gender == 'female' ? 'female' : 'male') ?? false,
+    // 1. 如果是不同文本，或者是重播，重新開始
+    if (state.currentText != text) {
+      await stop();
+      final chunks = _splitText(text);
+      state = state.copyWith(chunks: chunks, currentText: text, currentIndex: 0, isPaused: false);
+      _playFromCurrent();
+      return;
+    }
+
+    // 2. 如果正在播放，則暫停
+    if (state.isPlaying && !state.isPaused) {
+      await _flutterTts.stop();
+      state = state.copyWith(isPaused: true);
+      return;
+    }
+
+    // 3. 如果暫停中，則恢復
+    if (state.isPaused) {
+      state = state.copyWith(isPaused: false);
+      _playFromCurrent();
+      return;
+    }
+
+    // 4. 初次播放
+    final chunks = _splitText(text);
+    state = state.copyWith(chunks: chunks, currentText: text, currentIndex: 0, isPaused: false);
+    _playFromCurrent();
+  }
+
+  Future<void> replay() async {
+    final text = state.currentText;
+    if (text == null) return;
+    await stop();
+    await togglePlay(text);
+  }
+
+  Future<void> _playFromCurrent() async {
+    state = state.copyWith(isPlaying: true);
+    
+    // 獲取高品質語音
+    final dynamic voices = await _flutterTts.getVoices;
+    if (voices != null && voices is List && voices.isNotEmpty) {
+      final targetVoices = voices.where((v) => v['locale']?.toString().toLowerCase().contains('zh_tw') ?? false).toList();
+      if (targetVoices.isNotEmpty) {
+        dynamic selected = targetVoices.firstWhere(
+          (v) => v['name']?.toString().toLowerCase().contains('female') ?? false,
+          orElse: () => targetVoices.firstWhere(
+            (v) => v['name']?.toString().toLowerCase().contains('google') ?? false,
             orElse: () => targetVoices.first,
-          );
-          await _flutterTts.setVoice({"name": selected["name"], "locale": selected["locale"]});
-        }
+          ),
+        );
+        await _flutterTts.setVoice({"name": selected["name"], "locale": selected["locale"]});
       }
+    }
 
-      await stop(); 
-      await _flutterTts.setPitch(1.0);
-      await _flutterTts.setSpeechRate(kIsWeb ? 0.9 : 1.0);
+    await _flutterTts.setPitch(1.0);
+    await _flutterTts.setSpeechRate(1.2);
 
-      state = state.copyWith(isPlaying: true, currentGender: gender);
+    for (int i = state.currentIndex; i < state.chunks.length; i++) {
+      if (!state.isPlaying || state.isPaused) break;
+      
+      state = state.copyWith(currentIndex: i);
+      final syncCompleter = Completer<void>();
+      
+      _flutterTts.setCompletionHandler(() {
+        if (!syncCompleter.isCompleted) syncCompleter.complete();
+      });
+      _flutterTts.setErrorHandler((_) {
+        if (!syncCompleter.isCompleted) syncCompleter.complete();
+      });
 
-      if (kIsWeb && text.length > 50) {
-        List<String> chunks = _splitText(text);
-        for (String chunk in chunks) {
-          if (!state.isPlaying) break;
-          
-          // 建立一個等待鎖 / Create a lock to wait for speech completion
-          final syncCompleter = Completer<void>();
-          _flutterTts.setCompletionHandler(() {
-            if (!syncCompleter.isCompleted) syncCompleter.complete();
-          });
-          _flutterTts.setErrorHandler((_) {
-            if (!syncCompleter.isCompleted) syncCompleter.complete();
-          });
+      await _flutterTts.speak(state.chunks[i]);
+      
+      await syncCompleter.future.timeout(const Duration(seconds: 20), onTimeout: () {
+        if (!syncCompleter.isCompleted) syncCompleter.complete();
+      });
+      
+      await Future.delayed(const Duration(milliseconds: 200));
+    }
 
-          await _flutterTts.speak(chunk);
-          
-          // 等待這句讀完，或最多等 15 秒避免卡死 / Wait for completion or timeout
-          await syncCompleter.future.timeout(const Duration(seconds: 15), onTimeout: () {
-            if (!syncCompleter.isCompleted) syncCompleter.complete();
-          });
-          
-          // 句與句之間的自然停頓
-          await Future.delayed(const Duration(milliseconds: 200));
-        }
-        state = state.copyWith(isPlaying: false);
-      } else {
-        await _flutterTts.speak(text);
-      }
-    } catch (e) {
-      debugPrint("TTS Speak Error: $e");
-      state = state.copyWith(isPlaying: false);
+    // 如果全部讀完
+    if (state.currentIndex >= state.chunks.length - 1 && !state.isPaused) {
+      state = state.copyWith(isPlaying: false, currentIndex: 0);
     }
   }
 
   List<String> _splitText(String text) {
-    // 以句號、問號、感嘆號或換行符號切分 / Split by punctuation
     return text.split(RegExp(r'[。！？\n\r]')).where((s) => s.trim().isNotEmpty).toList();
   }
 
@@ -115,7 +164,7 @@ class TtsNotifier extends StateNotifier<TtsState> {
     try {
       await _flutterTts.stop();
     } catch (_) {}
-    state = state.copyWith(isPlaying: false, currentGender: null);
+    state = TtsState();
   }
 }
 

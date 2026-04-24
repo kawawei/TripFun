@@ -53,14 +53,14 @@ class _ActivityDetailPageState extends ConsumerState<ActivityDetailPage> with Wi
     }
   }
 
-  Future<void> _toggleSpeak(String gender) async {
+  Future<void> _handlePlayPause() async {
     if (widget.content == null || widget.content!.isEmpty) return;
+    await ref.read(ttsProvider.notifier).togglePlay(widget.content!);
+  }
 
-    // 朗讀所有文字內容 / Read the entire detailed description
-    String textToSpeak = widget.content!;
-    
-    // 使用全域 Provider 進行朗讀 / Use global provider
-    await ref.read(ttsProvider.notifier).speak(textToSpeak, gender: gender);
+  Future<void> _handleReplay() async {
+    if (widget.content == null || widget.content!.isEmpty) return;
+    await ref.read(ttsProvider.notifier).replay();
   }
 
   String _parseImageUrl(String url) {
@@ -74,7 +74,8 @@ class _ActivityDetailPageState extends ConsumerState<ActivityDetailPage> with Wi
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
-    ref.read(ttsProvider.notifier).stop(); // 銷毀時安全停止所有語音 / Safely stop TTS on dispose
+    // 銷毀時停止所有語音，但保留進度在 Provider 中（如果需要的話）
+    // ref.read(ttsProvider.notifier).stop(); 
     super.dispose();
   }
 
@@ -92,9 +93,9 @@ class _ActivityDetailPageState extends ConsumerState<ActivityDetailPage> with Wi
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (widget.personalInfo != null) _buildPersonalInfoCard(context),
+                  const SizedBox(height: 16),
+                  _buildVoicePanel(),
                   const SizedBox(height: 24),
-                  _buildVoiceGuideSection(),
-                  const SizedBox(height: 12),
                   _buildSectionTitle('詳細介紹'),
                   const SizedBox(height: 12),
                   Text(
@@ -115,99 +116,104 @@ class _ActivityDetailPageState extends ConsumerState<ActivityDetailPage> with Wi
     );
   }
 
-  Widget _buildVoiceGuideSection() {
-    final themeColor = Theme.of(context).primaryColor;
+  Widget _buildVoicePanel() {
+    final ttsState = ref.watch(ttsProvider);
+    final isPlaying = ttsState.isPlaying && !ttsState.isPaused;
+
     return Container(
+      margin: const EdgeInsets.only(top: 16, bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.blue[50]?.withOpacity(0.5),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
-        border: Border.all(color: Colors.grey.shade100),
+        border: Border.all(color: Colors.blue.shade100, width: 1),
       ),
       child: Row(
         children: [
+          // AI 標籤 / AI Label
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: themeColor.withOpacity(0.1),
+              color: Colors.blue[100],
               shape: BoxShape.circle,
             ),
-            child: Icon(LucideIcons.mic2, color: themeColor, size: 18),
+            child: Icon(LucideIcons.sparkles, size: 16, color: Colors.blue[700]),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('AI 語音導覽', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                Text('為您朗讀景點亮點', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                Text(
+                  'AI 語音導覽',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue[900],
+                  ),
+                ),
+                Text(
+                  isPlaying ? '正在播放介紹...' : (ttsState.isPaused ? '已暫停' : '點擊聆聽景點亮點'),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.blue[700],
+                  ),
+                ),
               ],
             ),
           ),
-          _buildVoiceButton(
-            label: '優雅女聲',
-            gender: 'female',
-            icon: LucideIcons.user,
-            activeColor: Colors.pink.shade400,
+          // 播放/暫停按鈕 / Play/Pause Button
+          _buildControlButton(
+            icon: isPlaying ? LucideIcons.pause : LucideIcons.play,
+            label: isPlaying ? '暫停' : '播放',
+            onTap: _handlePlayPause,
+            color: Colors.blue,
           ),
-          const SizedBox(width: 8),
-          _buildVoiceButton(
-            label: '穩重男聲',
-            gender: 'male',
-            icon: LucideIcons.userCheck,
-            activeColor: Colors.blue.shade600,
+          const SizedBox(width: 12),
+          // 重播按鈕 / Replay Button
+          _buildControlButton(
+            icon: LucideIcons.rotateCcw,
+            label: '重播',
+            onTap: _handleReplay,
+            color: Colors.grey.shade700,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildVoiceButton({
-    required String label,
-    required String gender,
+  Widget _buildControlButton({
     required IconData icon,
-    required Color activeColor,
+    required String label,
+    required VoidCallback onTap,
+    required Color color,
   }) {
-    final ttsState = ref.watch(ttsProvider);
-    final isCurrent = ttsState.isPlaying && ttsState.currentGender == gender;
-    
     return GestureDetector(
-      onTap: () => _toggleSpeak(gender),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isCurrent ? activeColor : activeColor.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(25),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isCurrent)
-              const Padding(
-                padding: EdgeInsets.only(right: 6),
-                child: SizedBox(
-                  width: 10,
-                  height: 10,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: color.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
-              )
-            else
-              Icon(icon, size: 14, color: activeColor),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isCurrent ? Colors.white : activeColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 11,
-              ),
+              ],
             ),
-          ],
-        ),
+            child: Icon(icon, size: 20, color: color),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w500),
+          ),
+        ],
       ),
     );
   }
