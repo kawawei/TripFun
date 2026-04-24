@@ -26,14 +26,16 @@ export class PackingService {
    */
   async getPackingList(userId: string, tripId?: string) {
     // ========================================
-    // 只取手動新增的項目（依 trip_id 篩選，不使用系統預設清單）
-    // Only fetch manually added items by trip_id, no default seed data
+    // 取出全域項目 (trip_id 為空) 加上該行程的專屬項目
+    // Fetch global items (trip_id is null) PLUS trip-specific items
     // ========================================
-    const whereClause = tripId ? { trip_id: tripId } : {};
-    const items = await this.itemRepository.find({
-      where: whereClause,
-      order: { sort_order: 'ASC', created_at: 'ASC' },
-    });
+    const items = await this.itemRepository
+      .createQueryBuilder('item')
+      .where('item.trip_id IS NULL')
+      .orWhere(tripId ? 'item.trip_id = :tripId' : '1=0', { tripId })
+      .orderBy('item.sort_order', 'ASC')
+      .addOrderBy('item.created_at', 'ASC')
+      .getMany();
 
     if (items.length === 0) return [];
 
