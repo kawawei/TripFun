@@ -111,6 +111,7 @@ flutter:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "../圖片/軟體圖標/android_square.png"
+  image_path: "../圖片/軟體圖標/ios_square.png"
+  remove_alpha_ios: true
   adaptive_icon_background: "#06b6d4"
   adaptive_icon_foreground: "../圖片/軟體圖標/android_square.png"

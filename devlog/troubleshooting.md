@@ -552,3 +552,31 @@
   - 重新打包安裝即可順利抓取 API。
 
 紀錄時間：05:49
+
+### iOS TestFlight 上傳失敗：圖示含 Alpha 透明通道且非正方形 (iOS Icon Alpha Channel & Non-Square)
+2026-04-25 07:28 — TestFlight Archive 上傳被 Apple 拒絕
+
+問題描述
+- 場景：完成 iOS Archive 後點擊 Distribute App 上傳至 TestFlight，Xcode Organizer 顯示上傳失敗。
+- 錯誤訊息：`Invalid large app icon. The large app icon in the asset catalog in 'Runner.app' can't be transparent or contain an alpha channel.`
+
+原因分析
+- `ios.png` 原始尺寸為 `1920x1080`（非正方形），apple icon 必須是正方形。
+- 圖片含有透明通道（Alpha Channel），Apple 規定 App Store / TestFlight 的 Large App Icon 不允許透明通道。
+- `flutter_launcher_icons` 的 `image_path` 指向此非正方形含透明通道圖片，導致產生的所有 iOS 圖示均不符合規範。
+
+解決方案
+1. 使用 macOS `sips` 指令將 `ios.png` 以置中正方形裁切為 `1080x1080`：
+   ```bash
+   sips -c 1080 1080 "圖片/軟體圖標/ios.png" --out "圖片/軟體圖標/ios_square.png"
+   ```
+2. 在 `mobile/pubspec.yaml` 的 `flutter_launcher_icons` 設定中：
+   - 將 `image_path` 改為指向 `ios_square.png`
+   - 新增 `remove_alpha_ios: true`
+3. 重新執行 `dart run flutter_launcher_icons`。
+4. 清理 Xcode DerivedData → 重新 Archive → 上傳成功。
+
+驗證結果
+- Xcode 重新 Archive 後上傳 TestFlight 成功，Build 4 已出現於 App Store Connect。
+
+紀錄時間：07:28
