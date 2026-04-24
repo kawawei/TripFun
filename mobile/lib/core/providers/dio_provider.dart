@@ -24,14 +24,7 @@ final dioProvider = Provider<Dio>((ref) {
     ),
   );
 
-  // 在輪詢機制下，為了避免終端機被洗版，關閉 requestBody 與 responseBody 記錄
-  // 或是直接移除 LogInterceptor
-  dio.interceptors.add(LogInterceptor(
-    requestBody: false,
-    responseBody: false,
-    requestHeader: false,
-    responseHeader: false,
-  ));
+  // 為了避免每 3 秒輪詢造成終端機洗版，已將 LogInterceptor 完整移除
 
   return dio;
 });
