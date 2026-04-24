@@ -54,7 +54,7 @@ class TtsNotifier extends StateNotifier<TtsState> {
     try {
       // 嘗試獲取高品質語音 / Select high-quality voices
       final dynamic voices = await _flutterTts.getVoices;
-      if (voices != null && voices is List) {
+      if (voices != null && voices is List && voices.isNotEmpty) {
         try {
           final targetVoices = voices.where((v) {
             final String locale = v['locale']?.toString().toLowerCase() ?? '';
@@ -63,7 +63,6 @@ class TtsNotifier extends StateNotifier<TtsState> {
           }).toList();
 
           if (targetVoices.isNotEmpty) {
-            // 根據性別偏好與品質挑選
             dynamic selected;
             if (gender == 'female') {
               selected = targetVoices.firstWhere(
@@ -91,35 +90,27 @@ class TtsNotifier extends StateNotifier<TtsState> {
         }
       }
 
-      // 如果正在撥放且點擊同一個，就停止
       if (state.isPlaying && state.currentGender == gender) {
         await stop();
         return;
       }
 
-      await stop(); // 先停止前一個
+      await stop(); 
 
-      // 設定參數 (全面對齊翻譯頁面之黃金比例 1.0) / Align with Translator's 1.0 settings
-      if (gender == 'female') {
-        await _flutterTts.setPitch(1.0);
-        await _flutterTts.setSpeechRate(1.0);
-      } else if (gender == 'male') {
-        await _flutterTts.setPitch(0.9); // 男聲微調音頻即可，維持語速
-        await _flutterTts.setSpeechRate(1.0);
-      } else {
-        await _flutterTts.setPitch(1.0);
-        await _flutterTts.setSpeechRate(1.0);
-      }
+      // 對齊翻譯頁面之黃金比例 1.0
+      await _flutterTts.setPitch(1.0);
+      await _flutterTts.setSpeechRate(kIsWeb ? 0.9 : 1.0); // Web 端 0.9 較接近 Mobile 的 1.0 聽感
 
       state = state.copyWith(isPlaying: true, currentGender: gender);
 
-      // 分段處理長文本 (確保 Web 穩定讀完) / Split text for Web stability
-      if (kIsWeb && text.length > 80) {
+      if (kIsWeb && text.length > 100) {
+        // 加大分段間隔，防止 Chrome 報錯 Error Event
         List<String> chunks = _splitText(text);
         for (String chunk in chunks) {
           if (!state.isPlaying) break;
           await _flutterTts.speak(chunk);
-          // 在 Web 端，套件會自動處理隊列 / Plugin handles queue on Web
+          // 給予瀏覽器微小的緩衝時間 / Micro delay for stability
+          await Future.delayed(const Duration(milliseconds: 300));
         }
       } else {
         await _flutterTts.speak(text);
