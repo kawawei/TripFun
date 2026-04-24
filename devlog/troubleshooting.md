@@ -342,3 +342,16 @@
   - 用 `curl -I` 驗證圖片 URL 後重新獲得 `200 OK`，Flutter Web 顯示正常。
 
 紀錄時間：17:24
+
+### Web 觸控失效：漸層遮罩吞噬點擊事件 (Web Touch Hit-Test Masking)
+- **問題描述 (Issue)**: 
+  - 行程詳情頁面的頂部畫廊，點擊中央圖片不會觸發全螢幕放大功能，滑鼠游標依舊顯示為箭頭而非手型。
+- **原因分析**:
+  - 在 `SliverAppBar` 的 `FlexibleSpaceBar` 背景 `Stack` 中，有一層負責渲染陰影與漸層的 `DecoratedBox` 覆蓋於 `PageView` 圖片之上。
+  - 由於 `DecoratedBox` 在 Flutter 畫面排版中具備實體視覺範圍，預設會捕捉攔截 (Hit-Test) 任何點擊行為，導致點擊事件無法穿透傳遞給下方的 `GestureDetector`。
+- **解決方案 (Solution)**:
+  - 對負責漸層的 `DecoratedBox` 外部包裹 `IgnorePointer()` 組件，明確指示排版引擎忽略該圖層的所有游標互動與點擊，讓事件順利穿透至底層圖片。
+- **驗證結果**:
+  - Hot Reload 後點擊圖片即順利進入全螢幕燈箱模式。
+
+紀錄時間：17:29

@@ -37,6 +37,13 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
   int _currentPage = 0;
   final PageController _pageController = PageController();
 
+  String _parseImageUrl(String url) {
+    if (url.startsWith('/')) {
+      return 'http://43.103.3.57:8087$url';
+    }
+    return url;
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -105,10 +112,11 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
                 itemCount: images.length,
                 itemBuilder: (context, index) {
                   final url = images[index];
+                  final fullUrl = _parseImageUrl(url);
                   return GestureDetector(
-                    onTap: () => _showFullScreenImage(context, url),
+                    onTap: () => _showFullScreenImage(context, fullUrl),
                     child: CachedNetworkImage(
-                      imageUrl: url,
+                      imageUrl: fullUrl,
                       fit: BoxFit.cover,
                       fadeOutDuration: const Duration(milliseconds: 300),
                       fadeInDuration: const Duration(milliseconds: 500),
@@ -128,17 +136,19 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
               _buildPlaceholder(),
             
             // 漸層遮罩 / Gradient overlay
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  stops: [0.0, 0.4, 1.0],
-                  colors: [
-                    Colors.black38,
-                    Colors.transparent,
-                    Colors.black87,
-                  ],
+            const IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: [0.0, 0.4, 1.0],
+                    colors: [
+                      Colors.black38,
+                      Colors.transparent,
+                      Colors.black87,
+                    ],
+                  ),
                 ),
               ),
             ),
