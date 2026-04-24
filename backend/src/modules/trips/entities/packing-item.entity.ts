@@ -21,6 +21,9 @@ export class PackingItem {
   @Column({ default: false })
   is_custom: boolean;
 
+  @Column({ type: 'int', default: 0 })
+  sort_order: number;
+
   @Column({ length: 100, nullable: true })
   created_by: string; // 使用者 ID，如果是系統預設則為 null
 

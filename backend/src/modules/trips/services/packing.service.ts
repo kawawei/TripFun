@@ -32,7 +32,7 @@ export class PackingService {
     const whereClause = tripId ? { trip_id: tripId } : {};
     const items = await this.itemRepository.find({
       where: whereClause,
-      order: { category: 'ASC', created_at: 'ASC' },
+      order: { sort_order: 'ASC', created_at: 'ASC' },
     });
 
     if (items.length === 0) return [];

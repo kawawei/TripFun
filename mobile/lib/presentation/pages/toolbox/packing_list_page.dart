@@ -22,11 +22,13 @@ class PackingListPage extends ConsumerStatefulWidget {
 
 class _PackingListPageState extends ConsumerState<PackingListPage> {
   final TextEditingController _customItemController = TextEditingController();
-  String _selectedCategory = '重要證件與金流';
+  final TextEditingController _categoryController = TextEditingController();
+  String _selectedCategory = '其他';
 
   @override
   void dispose() {
     _customItemController.dispose();
+    _categoryController.dispose();
     super.dispose();
   }
 
@@ -329,16 +331,9 @@ class _PackingListPageState extends ConsumerState<PackingListPage> {
   // 新增項目 Dialog / Add item dialog
   // ========================================
   void _showAddItemDialog(BuildContext context) {
-    // 從現有清單取得所有已存在的類別
-    final existingCategories = ref
-        .read(packingListProvider)
-        .items
-        .map((item) => item.category)
-        .toSet()
-        .toList();
-
-    if (!existingCategories.contains(_selectedCategory)) {
-      _selectedCategory = existingCategories.isNotEmpty ? existingCategories.first : '其他';
+    // 預設填入「其他」或上一次輸入的類別
+    if (_categoryController.text.isEmpty) {
+      _categoryController.text = '其他';
     }
 
     showModalBottomSheet(
@@ -374,36 +369,26 @@ class _PackingListPageState extends ConsumerState<PackingListPage> {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text('選擇分類', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              const Text('分類名稱', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: existingCategories.map((cat) {
-                  final isSelected = _selectedCategory == cat;
-                  return ChoiceChip(
-                    label: Text(cat, style: const TextStyle(fontSize: 12)),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      if (selected) setModalState(() => _selectedCategory = cat);
-                    },
-                    selectedColor: AppColors.primary.withValues(alpha: 0.1),
-                    labelStyle: TextStyle(
-                      color: isSelected ? AppColors.primary : AppColors.textSecondary,
-                    ),
-                  );
-                }).toList(),
+              TextField(
+                controller: _categoryController,
+                decoration: const InputDecoration(
+                  hintText: '請輸入分類 (如：美國用、電子產品)',
+                  prefixIcon: Icon(LucideIcons.tag),
+                ),
               ),
               const SizedBox(height: 24),
               FilledButton(
                 style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
                 onPressed: () async {
-                  if (_customItemController.text.isNotEmpty) {
+                  if (_customItemController.text.isNotEmpty && _categoryController.text.isNotEmpty) {
                     await ref.read(packingListProvider.notifier).addItem(
                       _customItemController.text,
-                      _selectedCategory,
+                      _categoryController.text,
                     );
                     _customItemController.clear();
+                    // 分類不一定要 clear，方便連續新增
                     if (context.mounted) Navigator.pop(context);
                   }
                 },
