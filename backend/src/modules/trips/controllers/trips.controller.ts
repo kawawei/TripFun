@@ -19,4 +19,9 @@ export class TripsController {
   async create(@Body() createTripDto: any) {
     return this.tripsService.create(createTripDto);
   }
+
+  @Post('activities/:id')
+  async updateActivity(@Param('id') id: string, @Body() activityData: any) {
+    return this.tripsService.updateActivity(id, activityData);
+  }
 }

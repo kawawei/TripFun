@@ -128,4 +128,14 @@ export class TripsService implements OnModuleInit {
     const trip = this.tripRepository.create(tripData);
     return this.tripRepository.save(trip);
   }
+
+  /**
+   * 更新活動 / Update activity
+   * @param id 活動 ID
+   * @param activityData 更新的數據
+   */
+  async updateActivity(id: string, activityData: Partial<Activity>): Promise<Activity> {
+    await this.activityRepository.update(id, activityData);
+    return this.activityRepository.findOne({ where: { id } });
+  }
 }
