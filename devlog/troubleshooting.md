@@ -1,5 +1,35 @@
 # 問題追蹤 (Issue Tracking)
 
+## 2026-04-30
+
+### Android 16 相容性：Isar 16KB 頁面對齊限制與數據預載優化 (Android 16 Compatibility: Isar 16KB Alignment & Preloading)
+- **問題描述 (Issue)**: 
+  - Android 16 (API 36) 環境下，由於 Isar 3.x 使用的 `libisar.so` 原生函式庫不符合 16KB 記憶體頁對齊（Memory Page Alignment）要求，導致應用程式在現代硬體或模擬器上可能發生啟動崩潰。
+  - 使用者反映在斷網環境下，App 啟動會出現「載入成員失敗」等錯誤，且必須手動點擊頁面才會加載數據與圖檔，無法達成完全離線體驗。
+- **原因分析**:
+  - Isar 3.x 核心庫已停止更新，無法原生支援 Android 16 的安全規範。
+  - 原有的數據加載邏輯為「懶加載」，依賴網路請求且缺乏全局緩存機制。
+- **解決方案 (Solution)**:
+  - **資料庫遷移 (Isar -> Drift/SQLite)**：將整個持久化層遷移至 **Drift (SQLite)**。SQLite 是 Android 系統原生支持，完全符合 16KB 頁對齊規範。
+  - **同步服務 (SyncService)**：實作全局同步服務，在 App 啟動進入 `MainScreen` 後立即於背景自動執行完整同步。
+  - **預載與快取 (Pre-caching)**：同步過程中不僅更新 Drift 資料庫，並使用 `flutter_cache_manager` 預先下載所有行程活動的圖檔，確保斷網後所有圖片均可立即顯示。
+- **驗證結果**:
+  - `flutter build apk` 成功。
+  - 安裝至實體設備測試，斷網啟動後可流暢瀏覽所有行程與圖片，不再有相容性警告。
+
+### UI 異常：記帳頁面新增支出彈窗佈局溢出 (Layout Overflow in Add Expense Dialog)
+- **問題描述 (Issue)**: 
+  - 進入記帳功能點擊「新增支出」後，底部出現 `A RenderFlex overflowed by 5.9 pixels on the bottom` 警告。
+- **原因分析**:
+  - `AddExpenseDialog` 內的內容較多（含多個輸入框與分類列表），當鍵盤彈出壓縮螢幕空間時，內容總高度超過了彈窗剩餘的可用高度，導致微小溢出。
+- **解決方案 (Solution)**:
+  - 將 `AddExpenseDialog` 內的 `Column` 封裝在 `SingleChildScrollView` 中，允許內容在空間不足時進行捲動，從而消解溢出壓力。
+- **驗證結果**:
+  - 重新安裝後點擊輸入框喚起鍵盤，佈局正常且不再出現紅黑警告條。
+
+紀錄時間：05:35
+
+
 ## 2026-04-23
 
 ### Flutter 編譯錯誤：缺失 Material 導入 (Compilation Error: Missing Material Import)
