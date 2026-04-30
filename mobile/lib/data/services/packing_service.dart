@@ -21,7 +21,7 @@ class PackingService {
   /// 獲取清單 / Fetch packing list
   Future<List<PackingItem>> getPackingList(String userId, {String? tripId}) async {
     try {
-      final response = await _dio.get('/trips/packing', queryParameters: {
+      final response = await _dio.get('trips/packing', queryParameters: {
         'userId': userId,
         if (tripId != null) 'tripId': tripId,
       });
@@ -39,7 +39,7 @@ class PackingService {
   /// 切換狀態 / Toggle check status
   Future<bool> toggleItemStatus(String userId, String itemId, bool isChecked, {String? tripId}) async {
     try {
-      final response = await _dio.patch('/trips/packing/items/$itemId/status', data: {
+      final response = await _dio.patch('trips/packing/items/$itemId/status', data: {
         'userId': userId,
         'isChecked': isChecked,
         if (tripId != null) 'tripId': tripId,
@@ -54,7 +54,7 @@ class PackingService {
   /// 新增項目 / Create item
   Future<PackingItem?> createItem(String title, String category, {String? tripId, String? userId}) async {
     try {
-      final response = await _dio.post('/trips/packing/items', data: {
+      final response = await _dio.post('trips/packing/items', data: {
         'title': title,
         'category': category,
         'is_custom': true,
@@ -74,7 +74,7 @@ class PackingService {
   /// 刪除項目 / Delete item
   Future<bool> deleteItem(String itemId) async {
     try {
-      final response = await _dio.delete('/trips/packing/items/$itemId');
+      final response = await _dio.delete('trips/packing/items/$itemId');
       return response.statusCode == 200;
     } catch (e) {
       print('Delete packing item error: $e');

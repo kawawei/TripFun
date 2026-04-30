@@ -24,7 +24,7 @@ class TripService {
   /// 獲取所有行程 / Fetch all trips
   Future<List<Trip>> getTrips() async {
     try {
-      final response = await _dio.get('/trips');
+      final response = await _dio.get('trips');
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
         return data.map((json) => Trip.fromJson(json)).toList();
@@ -40,7 +40,7 @@ class TripService {
   /// 建立新行程 / Create a new trip
   Future<Trip?> createTrip(Trip trip) async {
     try {
-      final response = await _dio.post('/trips', data: trip.toJson());
+      final response = await _dio.post('trips', data: trip.toJson());
       if (response.statusCode == 201 || response.statusCode == 200) {
         return Trip.fromJson(response.data);
       }

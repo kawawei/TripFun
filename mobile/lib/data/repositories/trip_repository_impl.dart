@@ -29,7 +29,7 @@ class TripRepositoryImpl implements TripRepository {
   Future<List<TripEntity>> getTrips() async {
     try {
       // 1. 嘗試從網路獲取
-      final response = await _dio.get('/trips');
+      final response = await _dio.get('trips');
       final List<dynamic> data = response.data;
       final trips = data.map((json) => TripDto.fromJson(json).toEntity()).toList();
 
@@ -50,7 +50,7 @@ class TripRepositoryImpl implements TripRepository {
   @override
   Future<TripEntity> getTripById(String id) async {
     try {
-      final response = await _dio.get('/trips/$id');
+      final response = await _dio.get('trips/$id');
       final trip = TripDto.fromJson(response.data).toEntity();
       
       // 單筆也要快取
@@ -67,7 +67,7 @@ class TripRepositoryImpl implements TripRepository {
   @override
   Future<TripEntity> createTrip(TripEntity trip) async {
     try {
-      final response = await _dio.post('/trips', data: {
+      final response = await _dio.post('trips', data: {
         'title': trip.title,
         'location': trip.location,
         'startDate': trip.startDate.toIso8601String(),
@@ -87,7 +87,7 @@ class TripRepositoryImpl implements TripRepository {
   @override
   Future<List<ActivityEntity>> getActivities(String tripId) async {
     try {
-      final response = await _dio.get('/trips/$tripId/activities');
+      final response = await _dio.get('trips/$tripId/activities');
       final List<dynamic> data = response.data;
       final activities = data.map((json) => ActivityDto.fromJson(json).toEntity()).toList();
 

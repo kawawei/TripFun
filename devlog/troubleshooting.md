@@ -2,6 +2,30 @@
 
 ## 2026-04-30
 
+### 伺服器異常：後端容器狀態顯示 unhealthy (Backend Container unhealthy status)
+- **問題描述 (Issue)**: 
+  - 使用 `docker ps` 查看伺服器狀態時，`tripfun-backend` 容器顯示 `(unhealthy)`。
+- **原因分析**:
+  - Docker Compose 配置了健康檢查指令 `wget -qO- http://localhost:3000/api/v1/health`。
+  - 後端代碼中未實作該接口，且未設定 `api/v1` 全域前綴，導致檢查回傳 404 被判定為不健康。
+- **解決方案 (Solution)**:
+  - **實作健康檢查**: 新增 `HealthController` 與 `HealthModule`，提供 `GET /api/v1/health` 接口。
+  - **設定全域前綴**: 在 `main.ts` 中加入 `app.setGlobalPrefix('api/v1')` 確保路徑符合設計規範。
+- **驗證結果**:
+  - 重新部署後，容器狀態變更為 `(healthy)`。
+
+### App 異常：升級後 API 請求出現 404 報錯 (Mobile App: 404 Error after API upgrade)
+- **問題描述 (Issue)**: 
+  - 後端啟用 `/api/v1` 前綴後，App 無法獲取資料，畫面顯示 `DioException [bad response]: 404 Not Found`。
+- **原因分析**:
+  - **Dio 路徑規則衝突**: App 的 `baseUrl` 設定為 `.../api/v1`，但各 Service 呼叫時使用了絕對路徑格式（如 `_dio.get('/trips')`）。
+  - 在 Dio 中，若請求路徑以 `/` 開頭，會直接忽略 `baseUrl` 中的路徑部分（`/api/v1`），直接請求根目錄 `/trips`，而該路徑已不復存在。
+- **解決方案 (Solution)**:
+  - **修正路徑格式**: 遍歷所有 Service 與 Repository，將 API 路徑開頭的 `/` 移除（例如 `/trips` 改為 `trips`），使其正確繼承 `baseUrl` 的路徑。
+- **驗證結果**:
+  - App 重新加載後可正確抓取伺服器資料。
+
+
 ### Android 16 相容性：Isar 16KB 頁面對齊限制與數據預載優化 (Android 16 Compatibility: Isar 16KB Alignment & Preloading)
 - **問題描述 (Issue)**: 
   - Android 16 (API 36) 環境下，由於 Isar 3.x 使用的 `libisar.so` 原生函式庫不符合 16KB 記憶體頁對齊（Memory Page Alignment）要求，導致應用程式在現代硬體或模擬器上可能發生啟動崩潰。
