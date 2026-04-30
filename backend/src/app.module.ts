@@ -10,6 +10,8 @@ import { Expense } from './modules/trips/entities/expense.entity';
 import { UploadModule } from './modules/upload/upload.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { HealthModule } from './modules/health/health.module';
+
 
 /**
  * @file app.module.ts
@@ -49,7 +51,9 @@ import { join } from 'path';
     }),
     TripsModule,
     UploadModule,
+    HealthModule,
   ],
+
   controllers: [],
   providers: [],
 })

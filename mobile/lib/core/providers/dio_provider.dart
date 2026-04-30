@@ -14,7 +14,7 @@ final dioProvider = Provider<Dio>((ref) {
       // 根據 Docker 映射，後端 API 在 9001 端口 / Per Docker mapping, backend API is on port 9001
       // 在 Android 模擬器中，localhost 是 10.0.2.2 / For Android emulator, use 10.0.2.2
       // 這裡暫時使用 localhost，實際開發可透過 .env 配置
-      baseUrl: 'http://43.103.3.57:8087', 
+      baseUrl: 'http://43.103.3.57:8087/api/v1', 
       connectTimeout: const Duration(seconds: 5),
       receiveTimeout: const Duration(seconds: 3),
       headers: {

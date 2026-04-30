@@ -13,7 +13,7 @@ class TripService {
   
   // 測試伺服器後端地址 / Test server backend address
   // 根據 SDD 端口分配規範，伺服器後端映射端口為 8087
-  static const String baseUrl = 'http://43.103.3.57:8087';
+  static const String baseUrl = 'http://43.103.3.57:8087/api/v1';
 
   TripService() : _dio = Dio(BaseOptions(
     baseUrl: baseUrl,

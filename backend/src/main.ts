@@ -6,6 +6,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
   
+  app.setGlobalPrefix('api/v1'); // 設定全域 API 前綴 / Set global API prefix
+  
   const port = process.env.PORT || 3000;
   app.enableCors(); // 啟用跨來源資源共享 / Enable CORS
   await app.listen(port);
