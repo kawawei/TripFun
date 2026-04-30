@@ -4,6 +4,7 @@
 /// @description_en Manages current user state and switching logic
 library;
 
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/entities/user_entity.dart';
@@ -11,20 +12,38 @@ import '../../core/providers/dio_provider.dart';
 
 final tripMembersProvider = FutureProvider<List<UserEntity>>((ref) async {
   final dio = ref.watch(dioProvider);
+  final prefs = await SharedPreferences.getInstance();
+  const cacheKey = 'cached_trip_members';
+
   try {
     // 嚴格要求不使用硬編碼，全由後端回傳
     final response = await dio.get('/trips/44444444-4444-4444-4444-444444444444/members');
     final List<dynamic> data = response.data;
+    
+    // 將成功取得的資料快取到本地，支援離線登入
+    await prefs.setString(cacheKey, jsonEncode(data));
+
     return data.map((json) => UserEntity(id: json['id'], name: json['name'])).toList();
   } catch (e) {
     print('Failed to fetch members from backend: $e');
-    throw Exception('無法獲取成員資料，請確認後端伺服器是否已更新');
+    
+    // 若網路失敗，嘗試讀取本地快取
+    final cachedData = prefs.getString(cacheKey);
+    if (cachedData != null) {
+      print('Loading members from local cache');
+      final List<dynamic> data = jsonDecode(cachedData);
+      return data.map((json) => UserEntity(id: json['id'], name: json['name'])).toList();
+    }
+
+    throw Exception('無法獲取成員資料且無本地快取，請確認網路連線');
   }
 });
 
 class AuthNotifier extends StateNotifier<UserEntity?> {
-  AuthNotifier() : super(null) {
-    _loadSavedUser();
+  AuthNotifier([UserEntity? initialUser]) : super(initialUser) {
+    if (initialUser == null) {
+      _loadSavedUser();
+    }
   }
 
   Future<void> _loadSavedUser() async {

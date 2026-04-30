@@ -6,10 +6,12 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/pages/main_screen.dart';
 import 'presentation/pages/auth/login_page.dart';
 import 'presentation/providers/auth_provider.dart';
+import 'domain/entities/user_entity.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'data/local/isar_service.dart';
 
@@ -20,9 +22,23 @@ void main() async {
   await IsarService.instance;
   
   tz.initializeTimeZones();
+  
+  // 初始化 SharedPreferences 並提早載入目前使用者
+  final prefs = await SharedPreferences.getInstance();
+  final savedId = prefs.getString('current_user_id');
+  final savedName = prefs.getString('current_user_name');
+  UserEntity? initialUser;
+  if (savedId != null && savedName != null) {
+    initialUser = UserEntity(id: savedId, name: savedName);
+  }
+
   runApp(
-    const ProviderScope(
-      child: TripFunApp(),
+    ProviderScope(
+      overrides: [
+        if (initialUser != null)
+          authProvider.overrideWith((ref) => AuthNotifier(initialUser)),
+      ],
+      child: const TripFunApp(),
     ),
   );
 }
