@@ -105,147 +105,149 @@ class _AddExpenseDialogState extends ConsumerState<AddExpenseDialog> {
         right: 20,
         top: 20,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                '新增支出',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(LucideIcons.x, color: Colors.grey),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          
-          // 金額與幣別 / Amount & Currency
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _amountController,
-                  autofocus: true,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                  textAlignVertical: TextAlignVertical.center,
-                  cursorHeight: 24,
-                  decoration: const InputDecoration(
-                    hintText: '0.00',
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: 8),
-                    isDense: true,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  '新增支出',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(LucideIcons.x, color: Colors.grey),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            // 金額與幣別 / Amount & Currency
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _amountController,
+                    autofocus: true,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                    textAlignVertical: TextAlignVertical.center,
+                    cursorHeight: 24,
+                    decoration: const InputDecoration(
+                      hintText: '0.00',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(vertical: 8),
+                      isDense: true,
+                    ),
                   ),
                 ),
-              ),
-              _buildCurrencyPicker(),
-            ],
-          ),
-          
-          if (_currency != 'TWD')
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: _isLoadingRate 
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : Text(
-                    '≈ TWD ${((double.tryParse(_amountController.text) ?? 0) * _exchangeRate).toStringAsFixed(0)} (匯率: $_exchangeRate)',
-                    style: TextStyle(color: Colors.grey[500], fontSize: 13),
-                  ),
+                _buildCurrencyPicker(),
+              ],
             ),
-          
-          const Divider(),
-          const SizedBox(height: 16),
-
-          // 標題 / Title
-          TextField(
-            controller: _titleController,
-            decoration: InputDecoration(
-              hintText: '這筆錢花在哪裡？',
-              prefixIcon: const Icon(LucideIcons.edit3, size: 20),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-              filled: true,
-              fillColor: Colors.grey[100],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // 分類選擇 / Category Selection
-          const Text('分類', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 90,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: ExpenseCategory.values.length,
-              itemBuilder: (context, index) {
-                final cat = ExpenseCategory.values[index];
-                final isSelected = _selectedCategory == cat;
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedCategory = cat),
-                  child: Container(
-                    width: 70,
-                    margin: const EdgeInsets.only(right: 12),
-                    decoration: BoxDecoration(
-                      color: isSelected ? cat.color.withValues(alpha: 0.1) : Colors.transparent,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: isSelected ? cat.color : Colors.grey.shade200),
+            
+            if (_currency != 'TWD')
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _isLoadingRate 
+                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                  : Text(
+                      '≈ TWD ${((double.tryParse(_amountController.text) ?? 0) * _exchangeRate).toStringAsFixed(0)} (匯率: $_exchangeRate)',
+                      style: TextStyle(color: Colors.grey[500], fontSize: 13),
                     ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(cat.icon, color: isSelected ? cat.color : Colors.grey),
-                        const SizedBox(height: 4),
-                        Text(
-                          cat.label,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isSelected ? cat.color : Colors.grey,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            
+            const Divider(),
+            const SizedBox(height: 16),
+  
+            // 標題 / Title
+            TextField(
+              controller: _titleController,
+              decoration: InputDecoration(
+                hintText: '這筆錢花在哪裡？',
+                prefixIcon: const Icon(LucideIcons.edit3, size: 20),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                filled: true,
+                fillColor: Colors.grey[100],
+              ),
+            ),
+            const SizedBox(height: 16),
+  
+            // 分類選擇 / Category Selection
+            const Text('分類', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 90,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: ExpenseCategory.values.length,
+                itemBuilder: (context, index) {
+                  final cat = ExpenseCategory.values[index];
+                  final isSelected = _selectedCategory == cat;
+                  return GestureDetector(
+                    onTap: () => setState(() => _selectedCategory = cat),
+                    child: Container(
+                      width: 70,
+                      margin: const EdgeInsets.only(right: 12),
+                      decoration: BoxDecoration(
+                        color: isSelected ? cat.color.withValues(alpha: 0.1) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: isSelected ? cat.color : Colors.grey.shade200),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(cat.icon, color: isSelected ? cat.color : Colors.grey),
+                          const SizedBox(height: 4),
+                          Text(
+                            cat.label,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isSelected ? cat.color : Colors.grey,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // 備註 / Note (可選)
-          TextField(
-            controller: _noteController,
-            decoration: InputDecoration(
-              hintText: '備註 (可選)',
-              prefixIcon: const Icon(LucideIcons.stickyNote, size: 20),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-              filled: true,
-              fillColor: Colors.grey[100],
-            ),
-          ),
-          
-          const SizedBox(height: 24),
-          
-          SizedBox(
-            width: double.infinity,
-            height: 54,
-            child: ElevatedButton(
-              onPressed: _submit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).primaryColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                elevation: 0,
+                  );
+                },
               ),
-              child: const Text('新增紀錄', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+  
+            // 備註 / Note (可選)
+            TextField(
+              controller: _noteController,
+              decoration: InputDecoration(
+                hintText: '備註 (可選)',
+                prefixIcon: const Icon(LucideIcons.stickyNote, size: 20),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                filled: true,
+                fillColor: Colors.grey[100],
+              ),
+            ),
+            
+            const SizedBox(height: 24),
+            
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton(
+                onPressed: _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 0,
+                ),
+                child: const Text('新增紀錄', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
