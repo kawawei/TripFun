@@ -15,7 +15,7 @@ extension GetPackingCollectionCollection on Isar {
 
 const PackingCollectionSchema = CollectionSchema(
   name: r'PackingCollection',
-  id: -1123157710776253184,
+  id: -1123157710776253220,
   properties: {
     r'category': PropertySchema(
       id: 0,
@@ -65,7 +65,7 @@ const PackingCollectionSchema = CollectionSchema(
   idName: r'id',
   indexes: {
     r'remoteId': IndexSchema(
-      id: 6301175856541680640,
+      id: 6301175856541681032,
       name: r'remoteId',
       unique: true,
       replace: true,
@@ -78,7 +78,7 @@ const PackingCollectionSchema = CollectionSchema(
       ],
     ),
     r'tripId': IndexSchema(
-      id: 7734156669642745856,
+      id: 7734156669642746260,
       name: r'tripId',
       unique: false,
       replace: false,
@@ -91,7 +91,7 @@ const PackingCollectionSchema = CollectionSchema(
       ],
     ),
     r'userId': IndexSchema(
-      id: -2005826577402374912,
+      id: -2005826577402374815,
       name: r'userId',
       unique: false,
       replace: false,

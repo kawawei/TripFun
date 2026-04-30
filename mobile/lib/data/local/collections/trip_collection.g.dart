@@ -15,7 +15,7 @@ extension GetTripCollectionCollection on Isar {
 
 const TripCollectionSchema = CollectionSchema(
   name: r'TripCollection',
-  id: 2559389197456805888,
+  id: 2559389197456805687,
   properties: {
     r'endDate': PropertySchema(
       id: 0,
@@ -70,7 +70,7 @@ const TripCollectionSchema = CollectionSchema(
   idName: r'id',
   indexes: {
     r'remoteId': IndexSchema(
-      id: 6301175856541680640,
+      id: 6301175856541681032,
       name: r'remoteId',
       unique: true,
       replace: true,

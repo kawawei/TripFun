@@ -611,3 +611,46 @@
   - IDE 紅字消失，後端服務成功啟動且成功掛載 `/accounting` 相關路由。
 
 紀錄時間：02:45
+
+### Flutter Android 打包錯誤：API 36 依賴與 Java 編譯失敗 (Android Build Error: API 36 & Java Compile Failed)
+- **問題描述 (Issue)**: 
+  - 執行 `flutter build apk --release` 時報錯：
+    1. `:sqflite_android:compileReleaseJavaWithJavac` 失敗，提示找不到 `Build.VERSION_CODES.BAKLAVA` 等符號。
+    2. 後續報錯指出 `androidx.activity:activity` 等多個 AndroidX 依賴要求 `compileSdkVersion` 至少為 36 (Android 16 Baklava)。
+- **原因分析**:
+  - `sqflite` 發布了新版本 `2.4.2+3`，強制使用了 Android 16 (API 36) 的新特性 (如 `BAKLAVA` 與 Thread.threadId)。
+  - AndroidX 諸多套件近期發布新版，也同時調高了 `compileSdkVersion` 的最低限制至 36。而專案目前的 `compileSdkVersion` 鎖定為 34/35。
+- **解決方案 (Solution)**:
+  - 將專案 `mobile/android/build.gradle.kts` 內的 `compileSdkVersion` 和 `targetSdkVersion` 統一提升為 `36`。
+  - 在 `pubspec.yaml` 中使用 `dependency_overrides` 將 `sqflite_android` 降級至穩定的 `2.4.0` 版本，並將 `sqflite` 降級至 `2.4.1`，避免引入不相容的 Java 程式碼。
+- **驗證結果**:
+  - `flutter build apk --release` 成功通過編譯並產出 APK。
+
+紀錄時間：03:35
+
+### Flutter 原生崩潰：Isar Collection ID 不匹配 (IsarError: IllegalArg)
+- **問題描述 (Issue)**: 
+  - 安裝完畢後，App 卡在啟動畫面 (SplashScreen) 無法進入使用者選擇頁面。
+  - 透過 `flutter logs` 擷取發現啟動階段拋出 `Unhandled Exception: IsarError: IllegalArg: Collection id is invalid..`。
+- **原因分析**:
+  - 先前為了解決 Flutter Web 編譯階段的 JS 整數溢位問題，手動使用 `sed` 修改了 `.g.dart` 內產生的 64-bit 結構 Hash ID。這騙過了 Web 編譯器，但在 Android 原生環境中，Isar Core 在初始化時會嚴格驗證這些 Collection ID。由於 ID 遭到竄改，核心直接拒絕啟動資料庫並拋出致命錯誤。
+- **解決方案 (Solution)**:
+  - 執行 `flutter pub run build_runner build --delete-conflicting-outputs` 重新生成乾淨且正確的 Isar schema 檔案，恢復原生的 64-bit ID。
+- **驗證結果**:
+  - 重新打包 APK 後，App 成功通過資料庫初始化並進入主畫面。
+
+紀錄時間：03:47
+
+### Flutter 原生崩潰：鍵盤輸入時閃退 (NoSuchMethodError: setStylusHandwritingEnabled)
+- **問題描述 (Issue)**: 
+  - 進入新增記帳頁面，點擊輸入框時 App 瞬間閃退 (Crash)。
+  - `adb logcat -b crash` 顯示 `java.lang.NoSuchMethodError: No static method setStylusHandwritingEnabled(Landroid/view/inputmethod/EditorInfo;Z)V in class LD/b;` 發生於 `io.flutter.plugin.editing`。
+- **原因分析**:
+  - 專案在 `build.gradle.kts` 中強制鎖定了 `androidx.core:core:1.9.0` 舊版本。
+  - Flutter 新版引擎加入了對觸控筆手寫輸入的支援，該功能依賴 `androidx.core` 新版本中的 `setStylusHandwritingEnabled` 方法。因為依賴被強制降級，導致引擎在呼叫鍵盤時找不到此方法而引發 Fatal Exception。
+- **解決方案 (Solution)**:
+  - 由於已經將 `compileSdkVersion` 升級為 36，直接移除 `build.gradle.kts` 中 `configurations.all { resolutionStrategy { force(...) } }` 的強制降級區塊，讓 Gradle 自動解析並套用最新的 `androidx.core`。
+- **驗證結果**:
+  - 重新打包安裝後，點擊輸入框可順利喚出鍵盤進行記帳，不再發生閃退。
+
+紀錄時間：03:49
