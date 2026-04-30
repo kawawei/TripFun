@@ -13,14 +13,11 @@ import 'presentation/pages/auth/login_page.dart';
 import 'presentation/providers/auth_provider.dart';
 import 'domain/entities/user_entity.dart';
 import 'package:timezone/data/latest.dart' as tz;
-import 'data/local/isar_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // 初始化本地資料庫
-  await IsarService.instance;
-  
+  // 初始化本地資料庫 (Drift 會在 Provider 使用時延遲初始化)
   tz.initializeTimeZones();
   
   // 初始化 SharedPreferences 並提早載入目前使用者

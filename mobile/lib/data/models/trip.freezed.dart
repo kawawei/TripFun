@@ -12,7 +12,8 @@ part of 'trip.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
 Trip _$TripFromJson(Map<String, dynamic> json) {
   return _Trip.fromJson(json);
@@ -30,8 +31,12 @@ mixin _$Trip {
   int? get colorValue => throw _privateConstructorUsedError;
   List<TripActivity> get activities => throw _privateConstructorUsedError;
 
+  /// Serializes this Trip to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of Trip
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $TripCopyWith<Trip> get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -40,16 +45,17 @@ abstract class $TripCopyWith<$Res> {
   factory $TripCopyWith(Trip value, $Res Function(Trip) then) =
       _$TripCopyWithImpl<$Res, Trip>;
   @useResult
-  $Res call(
-      {String id,
-      String title,
-      String location,
-      DateTime startDate,
-      DateTime endDate,
-      int memberCount,
-      String? iconName,
-      int? colorValue,
-      List<TripActivity> activities});
+  $Res call({
+    String id,
+    String title,
+    String location,
+    DateTime startDate,
+    DateTime endDate,
+    int memberCount,
+    String? iconName,
+    int? colorValue,
+    List<TripActivity> activities,
+  });
 }
 
 /// @nodoc
@@ -62,6 +68,8 @@ class _$TripCopyWithImpl<$Res, $Val extends Trip>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of Trip
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -75,64 +83,69 @@ class _$TripCopyWithImpl<$Res, $Val extends Trip>
     Object? colorValue = freezed,
     Object? activities = null,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as String,
-      title: null == title
-          ? _value.title
-          : title // ignore: cast_nullable_to_non_nullable
-              as String,
-      location: null == location
-          ? _value.location
-          : location // ignore: cast_nullable_to_non_nullable
-              as String,
-      startDate: null == startDate
-          ? _value.startDate
-          : startDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      endDate: null == endDate
-          ? _value.endDate
-          : endDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      memberCount: null == memberCount
-          ? _value.memberCount
-          : memberCount // ignore: cast_nullable_to_non_nullable
-              as int,
-      iconName: freezed == iconName
-          ? _value.iconName
-          : iconName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      colorValue: freezed == colorValue
-          ? _value.colorValue
-          : colorValue // ignore: cast_nullable_to_non_nullable
-              as int?,
-      activities: null == activities
-          ? _value.activities
-          : activities // ignore: cast_nullable_to_non_nullable
-              as List<TripActivity>,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as String,
+            title: null == title
+                ? _value.title
+                : title // ignore: cast_nullable_to_non_nullable
+                      as String,
+            location: null == location
+                ? _value.location
+                : location // ignore: cast_nullable_to_non_nullable
+                      as String,
+            startDate: null == startDate
+                ? _value.startDate
+                : startDate // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            endDate: null == endDate
+                ? _value.endDate
+                : endDate // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            memberCount: null == memberCount
+                ? _value.memberCount
+                : memberCount // ignore: cast_nullable_to_non_nullable
+                      as int,
+            iconName: freezed == iconName
+                ? _value.iconName
+                : iconName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            colorValue: freezed == colorValue
+                ? _value.colorValue
+                : colorValue // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            activities: null == activities
+                ? _value.activities
+                : activities // ignore: cast_nullable_to_non_nullable
+                      as List<TripActivity>,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
 abstract class _$$TripImplCopyWith<$Res> implements $TripCopyWith<$Res> {
   factory _$$TripImplCopyWith(
-          _$TripImpl value, $Res Function(_$TripImpl) then) =
-      __$$TripImplCopyWithImpl<$Res>;
+    _$TripImpl value,
+    $Res Function(_$TripImpl) then,
+  ) = __$$TripImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {String id,
-      String title,
-      String location,
-      DateTime startDate,
-      DateTime endDate,
-      int memberCount,
-      String? iconName,
-      int? colorValue,
-      List<TripActivity> activities});
+  $Res call({
+    String id,
+    String title,
+    String location,
+    DateTime startDate,
+    DateTime endDate,
+    int memberCount,
+    String? iconName,
+    int? colorValue,
+    List<TripActivity> activities,
+  });
 }
 
 /// @nodoc
@@ -140,8 +153,10 @@ class __$$TripImplCopyWithImpl<$Res>
     extends _$TripCopyWithImpl<$Res, _$TripImpl>
     implements _$$TripImplCopyWith<$Res> {
   __$$TripImplCopyWithImpl(_$TripImpl _value, $Res Function(_$TripImpl) _then)
-      : super(_value, _then);
+    : super(_value, _then);
 
+  /// Create a copy of Trip
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -155,61 +170,63 @@ class __$$TripImplCopyWithImpl<$Res>
     Object? colorValue = freezed,
     Object? activities = null,
   }) {
-    return _then(_$TripImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as String,
-      title: null == title
-          ? _value.title
-          : title // ignore: cast_nullable_to_non_nullable
-              as String,
-      location: null == location
-          ? _value.location
-          : location // ignore: cast_nullable_to_non_nullable
-              as String,
-      startDate: null == startDate
-          ? _value.startDate
-          : startDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      endDate: null == endDate
-          ? _value.endDate
-          : endDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      memberCount: null == memberCount
-          ? _value.memberCount
-          : memberCount // ignore: cast_nullable_to_non_nullable
-              as int,
-      iconName: freezed == iconName
-          ? _value.iconName
-          : iconName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      colorValue: freezed == colorValue
-          ? _value.colorValue
-          : colorValue // ignore: cast_nullable_to_non_nullable
-              as int?,
-      activities: null == activities
-          ? _value._activities
-          : activities // ignore: cast_nullable_to_non_nullable
-              as List<TripActivity>,
-    ));
+    return _then(
+      _$TripImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as String,
+        title: null == title
+            ? _value.title
+            : title // ignore: cast_nullable_to_non_nullable
+                  as String,
+        location: null == location
+            ? _value.location
+            : location // ignore: cast_nullable_to_non_nullable
+                  as String,
+        startDate: null == startDate
+            ? _value.startDate
+            : startDate // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        endDate: null == endDate
+            ? _value.endDate
+            : endDate // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        memberCount: null == memberCount
+            ? _value.memberCount
+            : memberCount // ignore: cast_nullable_to_non_nullable
+                  as int,
+        iconName: freezed == iconName
+            ? _value.iconName
+            : iconName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        colorValue: freezed == colorValue
+            ? _value.colorValue
+            : colorValue // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        activities: null == activities
+            ? _value._activities
+            : activities // ignore: cast_nullable_to_non_nullable
+                  as List<TripActivity>,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$TripImpl implements _Trip {
-  const _$TripImpl(
-      {required this.id,
-      required this.title,
-      required this.location,
-      required this.startDate,
-      required this.endDate,
-      this.memberCount = 1,
-      this.iconName,
-      this.colorValue,
-      final List<TripActivity> activities = const []})
-      : _activities = activities;
+  const _$TripImpl({
+    required this.id,
+    required this.title,
+    required this.location,
+    required this.startDate,
+    required this.endDate,
+    this.memberCount = 1,
+    this.iconName,
+    this.colorValue,
+    final List<TripActivity> activities = const [],
+  }) : _activities = activities;
 
   factory _$TripImpl.fromJson(Map<String, dynamic> json) =>
       _$$TripImplFromJson(json);
@@ -263,25 +280,30 @@ class _$TripImpl implements _Trip {
                 other.iconName == iconName) &&
             (identical(other.colorValue, colorValue) ||
                 other.colorValue == colorValue) &&
-            const DeepCollectionEquality()
-                .equals(other._activities, _activities));
+            const DeepCollectionEquality().equals(
+              other._activities,
+              _activities,
+            ));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      title,
-      location,
-      startDate,
-      endDate,
-      memberCount,
-      iconName,
-      colorValue,
-      const DeepCollectionEquality().hash(_activities));
+    runtimeType,
+    id,
+    title,
+    location,
+    startDate,
+    endDate,
+    memberCount,
+    iconName,
+    colorValue,
+    const DeepCollectionEquality().hash(_activities),
+  );
 
-  @JsonKey(ignore: true)
+  /// Create a copy of Trip
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$TripImplCopyWith<_$TripImpl> get copyWith =>
@@ -289,23 +311,22 @@ class _$TripImpl implements _Trip {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$TripImplToJson(
-      this,
-    );
+    return _$$TripImplToJson(this);
   }
 }
 
 abstract class _Trip implements Trip {
-  const factory _Trip(
-      {required final String id,
-      required final String title,
-      required final String location,
-      required final DateTime startDate,
-      required final DateTime endDate,
-      final int memberCount,
-      final String? iconName,
-      final int? colorValue,
-      final List<TripActivity> activities}) = _$TripImpl;
+  const factory _Trip({
+    required final String id,
+    required final String title,
+    required final String location,
+    required final DateTime startDate,
+    required final DateTime endDate,
+    final int memberCount,
+    final String? iconName,
+    final int? colorValue,
+    final List<TripActivity> activities,
+  }) = _$TripImpl;
 
   factory _Trip.fromJson(Map<String, dynamic> json) = _$TripImpl.fromJson;
 
@@ -327,8 +348,11 @@ abstract class _Trip implements Trip {
   int? get colorValue;
   @override
   List<TripActivity> get activities;
+
+  /// Create a copy of Trip
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$TripImplCopyWith<_$TripImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -348,8 +372,12 @@ mixin _$TripActivity {
   bool get isFirst => throw _privateConstructorUsedError;
   bool get isLast => throw _privateConstructorUsedError;
 
+  /// Serializes this TripActivity to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of TripActivity
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $TripActivityCopyWith<TripActivity> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -357,18 +385,20 @@ mixin _$TripActivity {
 /// @nodoc
 abstract class $TripActivityCopyWith<$Res> {
   factory $TripActivityCopyWith(
-          TripActivity value, $Res Function(TripActivity) then) =
-      _$TripActivityCopyWithImpl<$Res, TripActivity>;
+    TripActivity value,
+    $Res Function(TripActivity) then,
+  ) = _$TripActivityCopyWithImpl<$Res, TripActivity>;
   @useResult
-  $Res call(
-      {String id,
-      String time,
-      String title,
-      String subtitle,
-      String iconName,
-      Map<String, String>? personalInfo,
-      bool isFirst,
-      bool isLast});
+  $Res call({
+    String id,
+    String time,
+    String title,
+    String subtitle,
+    String iconName,
+    Map<String, String>? personalInfo,
+    bool isFirst,
+    bool isLast,
+  });
 }
 
 /// @nodoc
@@ -381,6 +411,8 @@ class _$TripActivityCopyWithImpl<$Res, $Val extends TripActivity>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of TripActivity
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -393,40 +425,43 @@ class _$TripActivityCopyWithImpl<$Res, $Val extends TripActivity>
     Object? isFirst = null,
     Object? isLast = null,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as String,
-      time: null == time
-          ? _value.time
-          : time // ignore: cast_nullable_to_non_nullable
-              as String,
-      title: null == title
-          ? _value.title
-          : title // ignore: cast_nullable_to_non_nullable
-              as String,
-      subtitle: null == subtitle
-          ? _value.subtitle
-          : subtitle // ignore: cast_nullable_to_non_nullable
-              as String,
-      iconName: null == iconName
-          ? _value.iconName
-          : iconName // ignore: cast_nullable_to_non_nullable
-              as String,
-      personalInfo: freezed == personalInfo
-          ? _value.personalInfo
-          : personalInfo // ignore: cast_nullable_to_non_nullable
-              as Map<String, String>?,
-      isFirst: null == isFirst
-          ? _value.isFirst
-          : isFirst // ignore: cast_nullable_to_non_nullable
-              as bool,
-      isLast: null == isLast
-          ? _value.isLast
-          : isLast // ignore: cast_nullable_to_non_nullable
-              as bool,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as String,
+            time: null == time
+                ? _value.time
+                : time // ignore: cast_nullable_to_non_nullable
+                      as String,
+            title: null == title
+                ? _value.title
+                : title // ignore: cast_nullable_to_non_nullable
+                      as String,
+            subtitle: null == subtitle
+                ? _value.subtitle
+                : subtitle // ignore: cast_nullable_to_non_nullable
+                      as String,
+            iconName: null == iconName
+                ? _value.iconName
+                : iconName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            personalInfo: freezed == personalInfo
+                ? _value.personalInfo
+                : personalInfo // ignore: cast_nullable_to_non_nullable
+                      as Map<String, String>?,
+            isFirst: null == isFirst
+                ? _value.isFirst
+                : isFirst // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            isLast: null == isLast
+                ? _value.isLast
+                : isLast // ignore: cast_nullable_to_non_nullable
+                      as bool,
+          )
+          as $Val,
+    );
   }
 }
 
@@ -434,19 +469,21 @@ class _$TripActivityCopyWithImpl<$Res, $Val extends TripActivity>
 abstract class _$$TripActivityImplCopyWith<$Res>
     implements $TripActivityCopyWith<$Res> {
   factory _$$TripActivityImplCopyWith(
-          _$TripActivityImpl value, $Res Function(_$TripActivityImpl) then) =
-      __$$TripActivityImplCopyWithImpl<$Res>;
+    _$TripActivityImpl value,
+    $Res Function(_$TripActivityImpl) then,
+  ) = __$$TripActivityImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {String id,
-      String time,
-      String title,
-      String subtitle,
-      String iconName,
-      Map<String, String>? personalInfo,
-      bool isFirst,
-      bool isLast});
+  $Res call({
+    String id,
+    String time,
+    String title,
+    String subtitle,
+    String iconName,
+    Map<String, String>? personalInfo,
+    bool isFirst,
+    bool isLast,
+  });
 }
 
 /// @nodoc
@@ -454,9 +491,12 @@ class __$$TripActivityImplCopyWithImpl<$Res>
     extends _$TripActivityCopyWithImpl<$Res, _$TripActivityImpl>
     implements _$$TripActivityImplCopyWith<$Res> {
   __$$TripActivityImplCopyWithImpl(
-      _$TripActivityImpl _value, $Res Function(_$TripActivityImpl) _then)
-      : super(_value, _then);
+    _$TripActivityImpl _value,
+    $Res Function(_$TripActivityImpl) _then,
+  ) : super(_value, _then);
 
+  /// Create a copy of TripActivity
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -469,56 +509,58 @@ class __$$TripActivityImplCopyWithImpl<$Res>
     Object? isFirst = null,
     Object? isLast = null,
   }) {
-    return _then(_$TripActivityImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as String,
-      time: null == time
-          ? _value.time
-          : time // ignore: cast_nullable_to_non_nullable
-              as String,
-      title: null == title
-          ? _value.title
-          : title // ignore: cast_nullable_to_non_nullable
-              as String,
-      subtitle: null == subtitle
-          ? _value.subtitle
-          : subtitle // ignore: cast_nullable_to_non_nullable
-              as String,
-      iconName: null == iconName
-          ? _value.iconName
-          : iconName // ignore: cast_nullable_to_non_nullable
-              as String,
-      personalInfo: freezed == personalInfo
-          ? _value._personalInfo
-          : personalInfo // ignore: cast_nullable_to_non_nullable
-              as Map<String, String>?,
-      isFirst: null == isFirst
-          ? _value.isFirst
-          : isFirst // ignore: cast_nullable_to_non_nullable
-              as bool,
-      isLast: null == isLast
-          ? _value.isLast
-          : isLast // ignore: cast_nullable_to_non_nullable
-              as bool,
-    ));
+    return _then(
+      _$TripActivityImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as String,
+        time: null == time
+            ? _value.time
+            : time // ignore: cast_nullable_to_non_nullable
+                  as String,
+        title: null == title
+            ? _value.title
+            : title // ignore: cast_nullable_to_non_nullable
+                  as String,
+        subtitle: null == subtitle
+            ? _value.subtitle
+            : subtitle // ignore: cast_nullable_to_non_nullable
+                  as String,
+        iconName: null == iconName
+            ? _value.iconName
+            : iconName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        personalInfo: freezed == personalInfo
+            ? _value._personalInfo
+            : personalInfo // ignore: cast_nullable_to_non_nullable
+                  as Map<String, String>?,
+        isFirst: null == isFirst
+            ? _value.isFirst
+            : isFirst // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        isLast: null == isLast
+            ? _value.isLast
+            : isLast // ignore: cast_nullable_to_non_nullable
+                  as bool,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$TripActivityImpl implements _TripActivity {
-  const _$TripActivityImpl(
-      {required this.id,
-      required this.time,
-      required this.title,
-      required this.subtitle,
-      required this.iconName,
-      final Map<String, String>? personalInfo,
-      this.isFirst = false,
-      this.isLast = false})
-      : _personalInfo = personalInfo;
+  const _$TripActivityImpl({
+    required this.id,
+    required this.time,
+    required this.title,
+    required this.subtitle,
+    required this.iconName,
+    final Map<String, String>? personalInfo,
+    this.isFirst = false,
+    this.isLast = false,
+  }) : _personalInfo = personalInfo;
 
   factory _$TripActivityImpl.fromJson(Map<String, dynamic> json) =>
       _$$TripActivityImplFromJson(json);
@@ -567,26 +609,31 @@ class _$TripActivityImpl implements _TripActivity {
                 other.subtitle == subtitle) &&
             (identical(other.iconName, iconName) ||
                 other.iconName == iconName) &&
-            const DeepCollectionEquality()
-                .equals(other._personalInfo, _personalInfo) &&
+            const DeepCollectionEquality().equals(
+              other._personalInfo,
+              _personalInfo,
+            ) &&
             (identical(other.isFirst, isFirst) || other.isFirst == isFirst) &&
             (identical(other.isLast, isLast) || other.isLast == isLast));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      time,
-      title,
-      subtitle,
-      iconName,
-      const DeepCollectionEquality().hash(_personalInfo),
-      isFirst,
-      isLast);
+    runtimeType,
+    id,
+    time,
+    title,
+    subtitle,
+    iconName,
+    const DeepCollectionEquality().hash(_personalInfo),
+    isFirst,
+    isLast,
+  );
 
-  @JsonKey(ignore: true)
+  /// Create a copy of TripActivity
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$TripActivityImplCopyWith<_$TripActivityImpl> get copyWith =>
@@ -594,22 +641,21 @@ class _$TripActivityImpl implements _TripActivity {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$TripActivityImplToJson(
-      this,
-    );
+    return _$$TripActivityImplToJson(this);
   }
 }
 
 abstract class _TripActivity implements TripActivity {
-  const factory _TripActivity(
-      {required final String id,
-      required final String time,
-      required final String title,
-      required final String subtitle,
-      required final String iconName,
-      final Map<String, String>? personalInfo,
-      final bool isFirst,
-      final bool isLast}) = _$TripActivityImpl;
+  const factory _TripActivity({
+    required final String id,
+    required final String time,
+    required final String title,
+    required final String subtitle,
+    required final String iconName,
+    final Map<String, String>? personalInfo,
+    final bool isFirst,
+    final bool isLast,
+  }) = _$TripActivityImpl;
 
   factory _TripActivity.fromJson(Map<String, dynamic> json) =
       _$TripActivityImpl.fromJson;
@@ -630,8 +676,11 @@ abstract class _TripActivity implements TripActivity {
   bool get isFirst;
   @override
   bool get isLast;
+
+  /// Create a copy of TripActivity
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$TripActivityImplCopyWith<_$TripActivityImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

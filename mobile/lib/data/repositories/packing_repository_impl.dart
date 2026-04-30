@@ -1,22 +1,23 @@
 /**
  * @file packing_repository_impl.dart
  * @description 行李清單倉庫實作 / Packing repository implementation
- * @description_zh 實作從 API 獲取行李數據並支援 Isar 離線快取
- * @description_en Implements fetching packing data from API with Isar offline caching
+ * @description_zh 實作從 API 獲取行李數據並支援 Drift (SQLite) 離線快取
+ * @description_en Implements fetching packing data from API with Drift (SQLite) offline caching
  */
 
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:isar/isar.dart';
+import 'package:drift/drift.dart';
 import '../services/packing_service.dart';
 import '../models/packing_item.dart';
-import '../local/collections/packing_collection.dart';
-import '../local/isar_service.dart';
+import '../local/app_database.dart';
+import '../../core/providers/database_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class PackingRepositoryImpl {
   final PackingService _service;
+  final AppDatabase _db;
 
-  PackingRepositoryImpl(this._service);
+  PackingRepositoryImpl(this._service, this._db);
 
   /// 獲取行李清單 (支援快取)
   Future<List<PackingItem>> getPackingList(String userId, {String? tripId}) async {
@@ -55,45 +56,38 @@ class PackingRepositoryImpl {
 
   Future<void> _cachePackingItems(String userId, String? tripId, List<PackingItem> items) async {
     if (kIsWeb) return;
-    final isar = await IsarService.instance;
-    if (isar == null) return;
-    await isar.writeTxn(() async {
+    
+    await _db.batch((batch) {
       // 清除舊快取 (針對特定用戶與行程)
-      await isar.packingCollections
-          .filter()
-          .userIdEqualTo(userId)
-          .and()
-          .tripIdEqualTo(tripId)
-          .deleteAll();
+      batch.deleteWhere(_db.packings, (t) => t.userId.equals(userId) & (tripId != null ? t.tripId.equals(tripId) : t.tripId.isNull()));
       
       for (var item in items) {
-        final collection = PackingCollection()
-          ..remoteId = item.id
-          ..tripId = tripId
-          ..userId = userId
-          ..title = item.title
-          ..category = item.category
-          ..isChecked = item.isChecked
-          ..isCustom = item.isCustom
-          ..lastUpdated = DateTime.now();
-        
-        await isar.packingCollections.putByRemoteId(collection);
+        batch.insert(
+          _db.packings,
+          PackingsCompanion.insert(
+            remoteId: item.id,
+            tripId: Value(tripId),
+            userId: userId,
+            title: item.title,
+            category: item.category,
+            isChecked: item.isChecked,
+            isCustom: item.isCustom,
+            lastUpdated: Value(DateTime.now()),
+          ),
+          mode: InsertMode.insertOrReplace,
+        );
       }
     });
   }
 
   Future<List<PackingItem>> _getCachedPackingItems(String userId, String? tripId) async {
     if (kIsWeb) return [];
-    final isar = await IsarService.instance;
-    if (isar == null) return [];
-    final collections = await isar.packingCollections
-        .filter()
-        .userIdEqualTo(userId)
-        .and()
-        .tripIdEqualTo(tripId)
-        .findAll();
+    final query = _db.select(_db.packings)
+      ..where((t) => t.userId.equals(userId) & (tripId != null ? t.tripId.equals(tripId) : t.tripId.isNull()));
     
-    return collections.map((c) => PackingItem(
+    final rows = await query.get();
+    
+    return rows.map((c) => PackingItem(
       id: c.remoteId,
       title: c.title,
       category: c.category,
@@ -104,19 +98,12 @@ class PackingRepositoryImpl {
 
   Future<void> _updateLocalStatus(String remoteId, bool isChecked) async {
     if (kIsWeb) return;
-    final isar = await IsarService.instance;
-    if (isar == null) return;
-    await isar.writeTxn(() async {
-      final collection = await isar.packingCollections.filter().remoteIdEqualTo(remoteId).findFirst();
-      if (collection != null) {
-        collection.isChecked = isChecked;
-        await isar.packingCollections.putByRemoteId(collection);
-      }
-    });
+    final updateQuery = _db.update(_db.packings)..where((t) => t.remoteId.equals(remoteId));
+    await updateQuery.write(PackingsCompanion(isChecked: Value(isChecked)));
   }
 }
 
 final packingRepositoryProvider = Provider<PackingRepositoryImpl>((ref) {
-  // 目前 PackingService 被宣告在同層，這裡實例化
-  return PackingRepositoryImpl(PackingService());
+  final db = ref.watch(databaseProvider);
+  return PackingRepositoryImpl(PackingService(), db);
 });

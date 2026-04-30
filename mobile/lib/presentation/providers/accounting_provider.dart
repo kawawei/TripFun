@@ -1,16 +1,16 @@
 /**
  * @file accounting_provider.dart
  * @description 記帳狀態管理 / Accounting state management
- * @description_zh 管理支出清單數據，包含新增、刪除與統計邏輯，支援 Isar 本地持久化與雲端同步
- * @description_en Manages expense list data, including add, delete, and statistics logic, supporting Isar local persistence and cloud sync
+ * @description_zh 管理支出清單數據，包含新增、刪除與統計邏輯，支援 Drift (SQLite) 本地持久化與雲端同步
+ * @description_en Manages expense list data, including add, delete, and statistics logic, supporting Drift (SQLite) local persistence and cloud sync
  */
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:isar/isar.dart';
+import 'package:drift/drift.dart';
 import '../../data/models/expense_entry.dart';
-import '../../data/local/isar_service.dart';
-import '../../data/local/collections/expense_collection.dart';
+import '../../data/local/app_database.dart';
+import '../../core/providers/database_provider.dart';
 import '../../data/repositories/expense_repository_impl.dart';
 import 'package:uuid/uuid.dart';
 
@@ -29,16 +29,15 @@ class AccountingNotifier extends StateNotifier<List<ExpenseEntry>> {
   // 1. 從本地資料庫載入
   Future<void> _loadFromLocal() async {
     if (kIsWeb) return;
-    final isar = await IsarService.instance;
-    if (isar == null) return;
-    final collections = await isar.expenseCollections
-        .where()
-        .filter()
-        .isDeletedEqualTo(false)
-        .sortByDateTimeDesc()
-        .findAll();
+    final db = _ref.read(databaseProvider);
+    
+    final query = db.select(db.expenses)
+      ..where((t) => t.isDeleted.equals(false))
+      ..orderBy([(t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc)]);
+    
+    final rows = await query.get();
 
-    state = collections.map((c) => ExpenseEntry(
+    state = rows.map((c) => ExpenseEntry(
       id: c.remoteId ?? c.id.toString(),
       amount: c.amount,
       currency: c.currency,
@@ -46,7 +45,7 @@ class AccountingNotifier extends StateNotifier<List<ExpenseEntry>> {
       category: ExpenseCategory.values.firstWhere((e) => e.name == c.category),
       title: c.title,
       note: c.note,
-      dateTime: c.dateTime,
+      dateTime: c.date,
     )).toList();
     
     // 載入本地後嘗試與雲端同步
@@ -81,28 +80,25 @@ class AccountingNotifier extends StateNotifier<List<ExpenseEntry>> {
 
     // 寫入本地資料庫
     if (kIsWeb) {
-      // Web 端若不支援 Isar，可考慮直接調用 API
       _syncSingleEntry(entry, tripId ?? 'default');
       return;
     }
     
-    final isar = await IsarService.instance;
-    if (isar == null) return;
-    await isar.writeTxn(() async {
-      final collection = ExpenseCollection()
-        ..remoteId = newId
-        ..tripId = tripId ?? 'default'
-        ..amount = amount
-        ..currency = currency
-        ..amountInBaseCurrency = amountInBaseCurrency
-        ..category = category.name
-        ..title = title
-        ..note = note
-        ..dateTime = dateTime
-        ..isSynced = false;
-      
-      await isar.expenseCollections.putByRemoteId(collection);
-    });
+    final db = _ref.read(databaseProvider);
+    await db.into(db.expenses).insert(
+      ExpensesCompanion.insert(
+        remoteId: Value(newId),
+        tripId: tripId ?? 'default',
+        amount: amount,
+        currency: currency,
+        amountInBaseCurrency: amountInBaseCurrency,
+        category: category.name,
+        title: title,
+        note: Value(note),
+        date: dateTime,
+        isSynced: const Value(false),
+      ),
+    );
 
     // 嘗試同步
     syncWithCloud(tripId: tripId);
@@ -120,18 +116,15 @@ class AccountingNotifier extends StateNotifier<List<ExpenseEntry>> {
       return;
     }
 
-    final isar = await IsarService.instance;
-    if (isar == null) return;
-    await isar.writeTxn(() async {
-      // 標記為已刪除 (Soft Delete) 以便同步刪除至雲端，或者直接刪除
-      // 這裡為了簡單先直接刪除本地，並嘗試調用 API
-      await isar.expenseCollections.filter().remoteIdEqualTo(id).deleteAll();
-    });
+    final db = _ref.read(databaseProvider);
+    // 直接刪除本地 (簡單處理)
+    final deleteQuery = db.delete(db.expenses)..where((t) => t.remoteId.equals(id));
+    await deleteQuery.go();
 
     try {
       await _ref.read(expenseRepositoryProvider).deleteExpense(id);
     } catch (_) {
-      // 如果刪除失敗（如斷網），可以在後續同步邏輯中處理
+      // 網路失敗暫不處理，可透過後續的全同步機制修正
     }
   }
 
@@ -139,17 +132,14 @@ class AccountingNotifier extends StateNotifier<List<ExpenseEntry>> {
   Future<void> syncWithCloud({String? tripId}) async {
     if (kIsWeb) return;
     
-    final currentTripId = tripId ?? '44444444-4444-4444-4444-444444444444'; // 預設測試 ID
-    final isar = await IsarService.instance;
-    if (isar == null) return;
+    final currentTripId = tripId ?? '44444444-4444-4444-4444-444444444444';
+    final db = _ref.read(databaseProvider);
 
     try {
       // A. 獲取本地未同步的數據
-      final unsynced = await isar.expenseCollections
-          .filter()
-          .isSyncedEqualTo(false)
-          .isDeletedEqualTo(false)
-          .findAll();
+      final unsyncedQuery = db.select(db.expenses)
+        ..where((t) => t.isSynced.equals(false) & t.isDeleted.equals(false));
+      final unsynced = await unsyncedQuery.get();
 
       if (unsynced.isNotEmpty) {
         final entriesToSync = unsynced.map((c) => ExpenseEntry(
@@ -160,40 +150,31 @@ class AccountingNotifier extends StateNotifier<List<ExpenseEntry>> {
           category: ExpenseCategory.values.firstWhere((e) => e.name == c.category),
           title: c.title,
           note: c.note,
-          dateTime: c.dateTime,
+          dateTime: c.date,
         )).toList();
 
         await _ref.read(expenseRepositoryProvider).syncExpenses(currentTripId, entriesToSync);
 
         // 更新本地狀態為已同步
-        await isar.writeTxn(() async {
-          for (var item in unsynced) {
-            item.isSynced = true;
-            await isar.expenseCollections.putByRemoteId(item);
-          }
-        });
+        for (var item in unsynced) {
+          final updateQuery = db.update(db.expenses)..where((t) => t.id.equals(item.id));
+          await updateQuery.write(const ExpensesCompanion(isSynced: Value(true)));
+        }
       }
-
-      // B. 從雲端拉取最新數據 (可選，視需求而定)
-      // final remoteEntries = await _ref.read(expenseRepositoryProvider).getExpenses(currentTripId);
-      // TODO: 實作合併邏輯
-      
     } catch (e) {
       print('Sync failed: $e');
     }
   }
 
-  // 單筆同步 (用於 Web 或 立即同步)
+  // 單筆同步
   Future<void> _syncSingleEntry(ExpenseEntry entry, String tripId) async {
     try {
       await _ref.read(expenseRepositoryProvider).syncExpenses(tripId, [entry]);
     } catch (_) {}
   }
 
-  // 計算總支出 (以主幣別計)
   double get totalExpense => state.fold(0, (sum, entry) => sum + entry.amountInBaseCurrency);
 
-  // 按類別統計
   Map<ExpenseCategory, double> get categoryTotals {
     final Map<ExpenseCategory, double> totals = {};
     for (var entry in state) {
