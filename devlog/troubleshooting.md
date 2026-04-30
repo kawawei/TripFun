@@ -579,4 +579,20 @@
 驗證結果
 - Xcode 重新 Archive 後上傳 TestFlight 成功，Build 4 已出現於 App Store Connect。
 
-紀錄時間：07:28
+### Flutter Web: Isar 3.x 相容性與整數溢位問題 (Isar Web Compatibility & JS Integer Overflow)
+- **問題描述 (Issue)**: 
+  - 場景：在 Chrome 上執行 App 時，Isar 初始化崩潰。
+  - 錯誤訊息 1：`MissingPluginException(No implementation found for method getApplicationDocumentsDirectory on channel plugins.flutter.io/path_provider)`。
+  - 錯誤訊息 2：`IsarError: Please use Isar 2.5.0 if you need web support.`。
+  - 錯誤訊息 3：`Error: The integer literal ... can't be represented exactly in JavaScript.` (在生成的 `.g.dart` 中)。
+- **原因分析**:
+  - **平台限制**：`path_provider` 不支援 Web 的文件目錄。Isar 3.x 的 Web 支援在穩定版中極不穩定，常因 JS 運行時加載失敗而噴出誤導性的 2.5.0 錯誤。
+  - **數值溢位**：Isar 生成的 Schema Hash 為 64 位元整數，超過了 JavaScript 數值（53 位元）的安全表示範圍，導致 Web 編譯失敗。
+- **解決方案 (Solution)**:
+  - **Web 繞過策略 (Bypass)**：修改 `IsarService`，在 Web 環境下回傳 `null`。
+  - **Repository 改造**：更新 `TripRepositoryImpl`、`PackingRepositoryImpl` 與 `AccountingProvider`，在 Web 環境下自動跳過 Isar 讀寫邏輯，直接使用網路 API。
+  - **數值校正**：編寫 `sed` 腳本對生成的 `.g.dart` 進行靜態替換，將大整數替換為 JS 可接受的相近數值，解決編譯報錯。
+- **驗證結果**:
+  - Chrome 成功啟動 App，資料可正常從 API 載入，行動端依然保有離線功能。
+
+紀錄時間：02:35

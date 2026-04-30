@@ -51,7 +51,7 @@ class TtsNotifier extends StateNotifier<TtsState> {
     if (_isInitialized) return;
     try {
       await _flutterTts.setLanguage("zh-TW");
-      await _flutterTts.setSpeechRate(1.2); // 調整為 1.2 倍速
+      await _flutterTts.setSpeechRate(1.0); // 標準速度
       await _flutterTts.setVolume(1.0);
       
       _flutterTts.setCompletionHandler(() {
@@ -126,7 +126,7 @@ class TtsNotifier extends StateNotifier<TtsState> {
     }
 
     await _flutterTts.setPitch(1.0);
-    await _flutterTts.setSpeechRate(1.2);
+    await _flutterTts.setSpeechRate(1.0);
 
     for (int i = state.currentIndex; i < state.chunks.length; i++) {
       if (!state.isPlaying || state.isPaused) break;

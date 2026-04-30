@@ -11,9 +11,14 @@ import 'presentation/pages/main_screen.dart';
 import 'presentation/pages/auth/login_page.dart';
 import 'presentation/providers/auth_provider.dart';
 import 'package:timezone/data/latest.dart' as tz;
+import 'data/local/isar_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // 初始化本地資料庫
+  await IsarService.instance;
+  
   tz.initializeTimeZones();
   runApp(
     const ProviderScope(
