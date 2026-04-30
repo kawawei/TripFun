@@ -596,3 +596,18 @@
   - Chrome 成功啟動 App，資料可正常從 API 載入，行動端依然保有離線功能。
 
 紀錄時間：02:35
+
+### 後端編譯錯誤：TypeOrmModule 導出成員缺失 (Backend Compilation: TypeOrmModule Export Missing)
+- **問題描述 (Issue)**: 
+  - 場景：在後端新增 `Accounting` 模組後，`app.module.ts` 與 `trips.module.ts` 出現紅字報錯。
+  - 錯誤訊息：`模組 '"@nestjs/typeorm"' 沒有匯出的成員 'TypeOrmModule'`。
+- **原因分析**:
+  - **版本不匹配 (Version Mismatch)**：`@nestjs/typeorm` 被自動升級到了 **v11**，而專案其餘 NestJS 套件（如 `@nestjs/common`）仍處於 **v10**。NestJS 的大版本更新通常不保證跨版本導出的完全相容性，且 IDE 的 TypeScript Server 可能因無法正確解析新版的 `index.d.ts` 而報錯。
+- **解決方案 (Solution)**:
+  - 將 `@nestjs/typeorm` 降級回 **v10** (`^10.0.0`)，確保與 NestJS 10 生態系統對齊。
+  - 執行 `pnpm install` 刷新本地依賴。
+  - 重啟 Docker 容器。
+- **驗證結果**:
+  - IDE 紅字消失，後端服務成功啟動且成功掛載 `/accounting` 相關路由。
+
+紀錄時間：02:45

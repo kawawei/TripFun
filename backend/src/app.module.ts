@@ -6,6 +6,7 @@ import { Trip } from './modules/trips/entities/trip.entity';
 import { Activity } from './modules/trips/entities/activity.entity';
 import { PackingItem } from './modules/trips/entities/packing-item.entity';
 import { UserPackingStatus } from './modules/trips/entities/user-packing-status.entity';
+import { Expense } from './modules/trips/entities/expense.entity';
 import { UploadModule } from './modules/upload/upload.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
@@ -32,7 +33,7 @@ import { join } from 'path';
         username: configService.get<string>('DB_USER', 'postgres'),
         password: configService.get<string>('DB_PASSWORD', 'tripfun_pass'),
         database: configService.get<string>('DB_NAME', 'tripfun_db'),
-        entities: [Trip, Activity, PackingItem, UserPackingStatus],
+        entities: [Trip, Activity, PackingItem, UserPackingStatus, Expense],
         synchronize: true, // 僅限開發環境使用 / Development only
       }),
       inject: [ConfigService],
