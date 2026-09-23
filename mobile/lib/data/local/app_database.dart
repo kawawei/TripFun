@@ -5,11 +5,14 @@
  * @description_en Defines SQLite table schemas and database instance, replacing Isar for Android 16 16KB support
  */
 
+import 'dart:ffi';
 import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:sqlite3/open.dart';
+import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 
 part 'app_database.g.dart';
 
@@ -83,6 +86,12 @@ class AppDatabase extends _$AppDatabase {
 
   static LazyDatabase _openConnection() {
     return LazyDatabase(() async {
+      if (Platform.isAndroid) {
+        open.overrideFor(OperatingSystem.android, () {
+          return DynamicLibrary.open('libsqlite3.so');
+        });
+      }
+
       final dbFolder = await getApplicationDocumentsDirectory();
       final file = File(p.join(dbFolder.path, 'db.sqlite'));
       return NativeDatabase(file);

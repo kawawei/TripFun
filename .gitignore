@@ -89,3 +89,6 @@ apk/
 
 # Image Resources
 圖片/
+
+# Local Database & Upload Backups
+backup/
